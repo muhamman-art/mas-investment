@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'cloudinary_storage',
+    'cloudinary',
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
@@ -211,3 +213,23 @@ PLATFORM_CURRENCY = 'NGN'
 PLATFORM_CURRENCY_SYMBOL = '₦'
 VENDOR_COMMISSION_RATE = 0.10  # 10%
 LOW_STOCK_THRESHOLD = 5
+
+# ─── CLOUDINARY ──────────────────────────────────────────────────────────────────
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dmhodlnnx'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', '528913312394119'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', 'DS5bDu-Hv7MrsCq_mKLpzwZ35DA'),
+}
+
+cloudinary.config(
+    cloud_name=CLOUDINARY_STORAGE['CLOUD_NAME'],
+    api_key=CLOUDINARY_STORAGE['API_KEY'],
+    api_secret=CLOUDINARY_STORAGE['API_SECRET'],
+    secure=True,
+)
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
