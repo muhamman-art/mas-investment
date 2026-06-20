@@ -1,0 +1,32 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}New Support Ticket — MAS Investment{% endblock %}
+{% block page_title %}New Support Ticket{% endblock %}
+{% block sidebar_nav %}
+<a href="{% url 'products:shop' %}" class="sidebar-link"><i class="bi bi-shop"></i>Shop</a>
+<a href="/customer/orders/" class="sidebar-link"><i class="bi bi-bag"></i>My Orders</a>
+<a href="/customer/support/" class="sidebar-link active"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:640px">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">Create Support Ticket</h6></div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Subject <span class="text-danger">*</span></label>
+          <input type="text" name="subject" class="form-control" placeholder="Brief description of your issue" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Message <span class="text-danger">*</span></label>
+          <textarea name="message" class="form-control" rows="6" placeholder="Describe your issue in detail. Include order numbers or any relevant information..." required></textarea>
+        </div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-send me-2"></i>Submit Ticket</button>
+          <a href="/customer/support/" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

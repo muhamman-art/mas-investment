@@ -1,0 +1,202 @@
+{% extends "base/base.html" %}
+{% block title %}{{ product.name }} — MAS Investment{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="/">Home</a></li>
+      <li class="breadcrumb-item"><a href="{% url 'products:shop' %}">Shop</a></li>
+      {% if product.category %}<li class="breadcrumb-item"><a href="{% url 'products:shop' %}?category={{ product.category.slug }}">{{ product.category.name }}</a></li>{% endif %}
+      <li class="breadcrumb-item active text-truncate" style="max-width:200px">{{ product.name }}</li>
+    </ol>
+  </nav>
+
+  <div class="row g-4">
+    <!-- Images -->
+    <div class="col-lg-5">
+      <div class="product-detail-images">
+        {% with primary=product.get_primary_image %}
+        <div class="main-image-wrap mb-3">
+          {% if primary %}
+            <img src="{{ primary.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-3 w-100" id="mainProductImg" style="max-height:480px;object-fit:contain;background:#f8fafc;cursor:zoom-in" onclick="openImageModal(this.src)">
+          {% else %}
+            <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="height:400px"><i class="bi bi-image fs-1 text-secondary"></i></div>
+          {% endif %}
+        </div>
+        {% endwith %}
+        {% if product.images.count > 1 %}
+        <div class="d-flex gap-2 overflow-auto">
+          {% for img in product.images.all %}
+          <div class="thumb-img flex-shrink-0" onclick="document.getElementById('mainProductImg').src='{{ img.image.url }}'">
+            <img src="{{ img.image.url }}" alt="thumb" class="rounded" style="width:72px;height:72px;object-fit:cover;cursor:pointer;border:2px solid transparent" onmouseover="this.style.borderColor='#4f46e5'" onmouseout="this.style.borderColor='transparent'">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Info -->
+    <div class="col-lg-7">
+      <div class="product-detail-info">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          {% if product.category %}<span class="badge bg-light text-primary border border-primary-subtle">{{ product.category.name }}</span>{% endif %}
+          {% if product.is_featured %}<span class="badge bg-warning text-dark">Featured</span>{% endif %}
+          {% if not product.is_in_stock %}<span class="badge bg-danger">Out of Stock</span>{% endif %}
+        </div>
+        <h1 class="fs-3 fw-bold mb-2">{{ product.name }}</h1>
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="d-flex align-items-center gap-1">
+            {% for i in "12345" %}
+              <i class="bi bi-star{% if forloop.counter <= product.rating %}-fill text-warning{% else %} text-secondary{% endif %} small"></i>
+            {% endfor %}
+            <span class="text-muted small ms-1">{{ product.rating }} ({{ product.review_count }} reviews)</span>
+          </div>
+          <span class="text-muted small">{{ product.total_sold }} sold</span>
+          <span class="text-muted small"><i class="bi bi-eye me-1"></i>{{ product.views }} views</span>
+        </div>
+
+        <!-- Price -->
+        <div class="price-block mb-3 p-3 bg-light rounded-3">
+          <div class="d-flex align-items-baseline gap-3">
+            <span class="fs-2 fw-800 text-primary">₦{{ product.price|floatformat:2 }}</span>
+            {% if product.compare_price %}
+            <span class="text-muted text-decoration-line-through fs-5">₦{{ product.compare_price|floatformat:2 }}</span>
+            <span class="badge bg-danger">Save {{ product.discount_percent }}%</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Short description -->
+        {% if product.short_description %}
+        <p class="text-muted mb-3">{{ product.short_description }}</p>
+        {% endif %}
+
+        <!-- Stock -->
+        <div class="mb-3">
+          {% if product.is_in_stock %}
+            <span class="text-success fw-semibold small"><i class="bi bi-check-circle me-1"></i>In Stock ({{ product.stock }} available)</span>
+            {% if product.is_low_stock %}<span class="badge bg-warning text-dark ms-2 small">Low Stock</span>{% endif %}
+          {% else %}
+            <span class="text-danger fw-semibold small"><i class="bi bi-x-circle me-1"></i>Out of Stock</span>
+          {% endif %}
+        </div>
+
+        <!-- Vendor -->
+        <div class="vendor-info d-flex align-items-center gap-2 mb-4 p-3 bg-light rounded-3">
+          <div class="bg-primary bg-opacity-10 rounded-circle p-2"><i class="bi bi-shop text-primary fs-5"></i></div>
+          <div>
+            <div class="fw-semibold small">{{ product.vendor.business_name }}</div>
+            <div class="text-muted" style="font-size:12px">{{ product.vendor.city }}, {{ product.vendor.state }}</div>
+          </div>
+        </div>
+
+        <!-- Add to Cart -->
+        {% if product.is_in_stock %}
+        <form method="post" action="{% url 'products:add_to_cart' product.id %}" class="mb-3">
+          {% csrf_token %}
+          <div class="row g-2 align-items-center">
+            <div class="col-auto">
+              <div class="qty-wrap d-flex align-items-center border rounded-3 overflow-hidden">
+                <button type="button" class="btn btn-light border-0 px-3 py-2" onclick="stepQty(this, -1)"><i class="bi bi-dash"></i></button>
+                <input type="number" name="quantity" value="1" min="1" max="{{ product.stock }}" class="form-control border-0 text-center fw-bold" style="width:60px">
+                <button type="button" class="btn btn-light border-0 px-3 py-2" onclick="stepQty(this, 1)"><i class="bi bi-plus"></i></button>
+              </div>
+            </div>
+            <div class="col">
+              <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold">
+                <i class="bi bi-cart-plus me-2"></i>Add to Cart
+              </button>
+            </div>
+          </div>
+        </form>
+        <div class="d-flex gap-2">
+          <a href="{% url 'orders:checkout' %}" class="btn btn-warning fw-bold flex-grow-1">
+            <i class="bi bi-bag-check me-2"></i>Buy Now
+          </a>
+          {% if user.is_authenticated %}
+          <button class="btn btn-outline-danger" onclick="toggleWishlist(event, '{{ product.id }}')" title="{% if in_wishlist %}Remove from Wishlist{% else %}Add to Wishlist{% endif %}">
+            <i class="bi bi-heart{% if in_wishlist %}-fill{% endif %}"></i>
+          </button>
+          {% endif %}
+        </div>
+        {% else %}
+        <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
+        {% endif %}
+
+        <!-- Delivery info -->
+        <div class="row g-2 mt-3">
+          <div class="col-4 text-center"><div class="border rounded p-2 small"><i class="bi bi-truck text-primary d-block mb-1 fs-5"></i>Fast Delivery</div></div>
+          <div class="col-4 text-center"><div class="border rounded p-2 small"><i class="bi bi-shield-check text-success d-block mb-1 fs-5"></i>Secure Pay</div></div>
+          <div class="col-4 text-center"><div class="border rounded p-2 small"><i class="bi bi-arrow-return-left text-warning d-block mb-1 fs-5"></i>7-Day Return</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabs: Description + Reviews -->
+  <div class="mt-5">
+    <ul class="nav nav-tabs" id="productTabs">
+      <li class="nav-item"><button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#descTab">Description</button></li>
+      <li class="nav-item"><button class="nav-link fw-semibold" data-bs-toggle="tab" data-bs-target="#reviewsTab">Reviews ({{ reviews.count }})</button></li>
+    </ul>
+    <div class="tab-content border border-top-0 rounded-bottom p-4">
+      <div class="tab-pane fade show active" id="descTab">
+        <div class="product-description" style="line-height:1.8">{{ product.description|linebreaks }}</div>
+      </div>
+      <div class="tab-pane fade" id="reviewsTab">
+        {% if reviews %}
+          {% for review in reviews %}
+          <div class="review-item d-flex gap-3 mb-4 pb-4 border-bottom">
+            <div class="avatar-placeholder flex-shrink-0">{{ review.user.first_name|first }}{{ review.user.last_name|first }}</div>
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fw-semibold">{{ review.user.get_full_name }}</span>
+                {% if review.is_verified_purchase %}<span class="badge bg-success-subtle text-success small">Verified Purchase</span>{% endif %}
+                <span class="text-muted small ms-auto">{{ review.created_at|date:"M d, Y" }}</span>
+              </div>
+              <div class="mb-1">{% for i in "12345" %}<i class="bi bi-star{% if forloop.counter <= review.rating %}-fill text-warning{% else %} text-secondary{% endif %} small"></i>{% endfor %}</div>
+              {% if review.title %}<div class="fw-semibold mb-1">{{ review.title }}</div>{% endif %}
+              <p class="text-muted mb-0">{{ review.comment }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4 text-muted"><i class="bi bi-chat-square fs-2 d-block mb-2"></i>No reviews yet. Be the first to review!</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Related Products -->
+  {% if related_products %}
+  <div class="mt-5">
+    <h4 class="fw-bold mb-3">Related Products</h4>
+    <div class="row g-3">
+      {% for p in related_products %}<div class="col-6 col-md-4 col-lg-3">{% include "partials/product_card.html" with product=p %}</div>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Image zoom modal -->
+<div class="modal fade" id="imgZoomModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
+    <div class="modal-content bg-dark border-0">
+      <div class="modal-header border-0 pb-0"><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body text-center p-2"><img id="zoomImg" src="" class="img-fluid" style="max-height:88vh"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openImageModal(src) {
+  document.getElementById('zoomImg').src = src;
+  new bootstrap.Modal(document.getElementById('imgZoomModal')).show();
+}
+</script>
+{% endblock %}

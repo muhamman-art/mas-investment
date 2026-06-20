@@ -1,0 +1,43 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Sales Report — Vendor{% endblock %}
+{% block page_title %}Sales Report{% endblock %}
+{% block sidebar_nav %}
+<a href="/vendor/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/vendor/products/" class="sidebar-link"><i class="bi bi-box-seam"></i>Products</a>
+<a href="/vendor/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/vendor/wallet/" class="sidebar-link"><i class="bi bi-wallet2"></i>Wallet</a>
+<a href="/vendor/reports/" class="sidebar-link active"><i class="bi bi-bar-chart-line"></i>Reports</a>
+{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-primary"><div class="stat-icon"><i class="bi bi-currency-dollar"></i></div><div class="stat-info"><div class="stat-value">₦{{ total_revenue|floatformat:0 }}</div><div class="stat-label">Net Revenue</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-warning"><div class="stat-icon"><i class="bi bi-percent"></i></div><div class="stat-info"><div class="stat-value">₦{{ total_commission|floatformat:0 }}</div><div class="stat-label">Commission Paid</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-success"><div class="stat-icon"><i class="bi bi-bag-check"></i></div><div class="stat-info"><div class="stat-value">{{ total_orders }}</div><div class="stat-label">Total Orders</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-info"><div class="stat-icon"><i class="bi bi-box-seam"></i></div><div class="stat-info"><div class="stat-value">{{ total_items_sold }}</div><div class="stat-label">Items Sold</div></div></div></div>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">Recent Sales</h6></div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0 small">
+        <thead class="table-light"><tr><th class="ps-3">Order</th><th>Product</th><th>Qty</th><th>Total</th><th>Commission</th><th>Net</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for item in order_items %}
+          <tr>
+            <td class="ps-3 fw-semibold">{{ item.order.order_number }}</td>
+            <td class="text-truncate" style="max-width:150px">{{ item.product_name }}</td>
+            <td>{{ item.quantity }}</td>
+            <td>₦{{ item.subtotal|floatformat:2 }}</td>
+            <td class="text-danger">-₦{{ item.commission_amount|floatformat:2 }}</td>
+            <td class="fw-bold text-success">₦{{ item.vendor_amount|floatformat:2 }}</td>
+            <td class="text-muted">{{ item.order.created_at|date:"M d, Y" }}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No sales yet</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

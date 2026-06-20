@@ -1,0 +1,42 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Create Staff — Admin{% endblock %}
+{% block page_title %}Create Staff Account{% endblock %}
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/staff/" class="sidebar-link active"><i class="bi bi-person-badge"></i>Staff</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:600px">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">New Staff Account</h6></div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <div class="row g-3">
+          <div class="col-sm-6"><label class="form-label fw-semibold small">First Name *</label><input type="text" name="first_name" class="form-control" required></div>
+          <div class="col-sm-6"><label class="form-label fw-semibold small">Last Name *</label><input type="text" name="last_name" class="form-control" required></div>
+          <div class="col-12"><label class="form-label fw-semibold small">Email Address *</label><input type="email" name="email" class="form-control" required></div>
+          <div class="col-sm-6"><label class="form-label fw-semibold small">Password *</label><input type="password" name="password" class="form-control" minlength="8" required></div>
+          <div class="col-sm-6"><label class="form-label fw-semibold small">Department</label>
+            <select name="department" class="form-select">
+              {% for val, label in departments %}<option value="{{ val }}">{{ label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold small d-block">Permissions</label>
+            <div class="d-flex gap-3 flex-wrap">
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="can_verify_payments" id="p1" checked><label class="form-check-label small" for="p1">Verify Payments</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="can_manage_orders" id="p2" checked><label class="form-check-label small" for="p2">Manage Orders</label></div>
+              <div class="form-check"><input class="form-check-input" type="checkbox" name="can_manage_customers" id="p3"><label class="form-check-label small" for="p3">Manage Customers</label></div>
+            </div>
+          </div>
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-person-plus me-2"></i>Create Staff</button>
+            <a href="/admin-panel/staff/" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

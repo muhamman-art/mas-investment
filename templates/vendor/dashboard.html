@@ -1,0 +1,121 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Vendor Dashboard — MAS Investment{% endblock %}
+{% block page_title %}Vendor Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-section-label">Store</div>
+<a href="/vendor/" class="sidebar-link active"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/vendor/products/" class="sidebar-link"><i class="bi bi-box-seam"></i>Products</a>
+<a href="/vendor/products/add/" class="sidebar-link"><i class="bi bi-plus-circle"></i>Add Product</a>
+<a href="/vendor/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<div class="nav-section-label">Finance</div>
+<a href="/vendor/wallet/" class="sidebar-link"><i class="bi bi-wallet2"></i>Wallet</a>
+<a href="/vendor/reports/" class="sidebar-link"><i class="bi bi-bar-chart-line"></i>Sales Report</a>
+{% endblock %}
+
+{% block content %}
+{% if vendor.status != 'approved' %}
+<div class="alert alert-warning mb-4">
+  <i class="bi bi-clock me-2"></i><strong>Account Pending Approval.</strong> Your vendor account is being reviewed. You'll be notified once approved.
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-primary">
+      <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+      <div class="stat-info"><div class="stat-value">₦{{ total_revenue|floatformat:0 }}</div><div class="stat-label">Total Revenue</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-success">
+      <div class="stat-icon"><i class="bi bi-bag-check"></i></div>
+      <div class="stat-info"><div class="stat-value">{{ total_orders }}</div><div class="stat-label">Total Orders</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card stat-card-info">
+      <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+      <div class="stat-info"><div class="stat-value">{{ active_products }}</div><div class="stat-label">Active Products</div></div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card {% if low_stock > 0 %}stat-card-danger{% else %}stat-card-secondary{% endif %}">
+      <div class="stat-icon"><i class="bi bi-exclamation-triangle"></i></div>
+      <div class="stat-info"><div class="stat-value">{{ low_stock }}</div><div class="stat-label">Low Stock</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Wallet Card -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card border-0 h-100" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff">
+      <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div><div class="small text-white-50">Wallet Balance</div><div class="fs-2 fw-800">₦{{ vendor.wallet_balance|floatformat:2 }}</div></div>
+          <i class="bi bi-wallet2 fs-1 text-white-50"></i>
+        </div>
+        <a href="/vendor/wallet/" class="btn btn-light btn-sm fw-bold"><i class="bi bi-cash-stack me-1"></i>Request Withdrawal</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">Recent Orders</h6>
+        <a href="/vendor/orders/" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light"><tr><th class="ps-3">Order #</th><th>Product</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for item in recent_orders %}
+              <tr>
+                <td class="ps-3 fw-semibold">{{ item.order.order_number }}</td>
+                <td class="text-truncate" style="max-width:140px">{{ item.product_name }}</td>
+                <td class="fw-bold">₦{{ item.subtotal|floatformat:2 }}</td>
+                <td><span class="status-badge status-{{ item.order.status }}">{{ item.order.get_status_display }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="4" class="text-center py-3 text-muted">No orders yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-3">
+  <div class="col-12"><h6 class="fw-bold mb-2">Quick Actions</h6></div>
+  <div class="col-6 col-md-3">
+    <a href="/vendor/products/add/" class="card border-0 shadow-sm text-decoration-none text-center p-3 d-block h-100 card-hover">
+      <i class="bi bi-plus-circle text-primary fs-2 mb-2 d-block"></i>
+      <div class="fw-semibold small">Add Product</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/vendor/products/" class="card border-0 shadow-sm text-decoration-none text-center p-3 d-block h-100 card-hover">
+      <i class="bi bi-box-seam text-success fs-2 mb-2 d-block"></i>
+      <div class="fw-semibold small">Manage Products</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/vendor/orders/" class="card border-0 shadow-sm text-decoration-none text-center p-3 d-block h-100 card-hover">
+      <i class="bi bi-bag text-info fs-2 mb-2 d-block"></i>
+      <div class="fw-semibold small">View Orders</div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="/vendor/reports/" class="card border-0 shadow-sm text-decoration-none text-center p-3 d-block h-100 card-hover">
+      <i class="bi bi-bar-chart text-warning fs-2 mb-2 d-block"></i>
+      <div class="fw-semibold small">Sales Report</div>
+    </a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Support Tickets — Staff{% endblock %}
+{% block page_title %}Support Tickets{% endblock %}
+{% block sidebar_nav %}
+<a href="/staff/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/staff/receipts/" class="sidebar-link"><i class="bi bi-receipt"></i>Receipts</a>
+<a href="/staff/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/staff/tickets/" class="sidebar-link active"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  {% for val, label in ticket_statuses %}<a href="?status={{ val }}" class="btn btn-sm {% if status == val %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ label }}</a>{% endfor %}
+  <a href="?" class="btn btn-sm btn-outline-secondary">All</a>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th class="ps-3">Ticket #</th><th>Subject</th><th>Customer</th><th>Priority</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          {% for ticket in page_obj %}
+          <tr>
+            <td class="ps-3 fw-bold small">{{ ticket.ticket_number }}</td>
+            <td class="small fw-semibold" style="max-width:180px"><div class="text-truncate">{{ ticket.subject }}</div></td>
+            <td><div class="small">{{ ticket.customer.get_full_name }}</div><div class="text-muted" style="font-size:11px">{{ ticket.customer.email }}</div></td>
+            <td><span class="badge {% if ticket.priority == 'urgent' %}bg-danger{% elif ticket.priority == 'high' %}bg-warning text-dark{% elif ticket.priority == 'medium' %}bg-info{% else %}bg-secondary{% endif %}">{{ ticket.get_priority_display }}</span></td>
+            <td><span class="badge {% if ticket.status == 'open' %}bg-success{% elif ticket.status == 'in_progress' %}bg-primary{% elif ticket.status == 'resolved' %}bg-info{% else %}bg-secondary{% endif %}">{{ ticket.get_status_display }}</span></td>
+            <td class="text-muted small">{{ ticket.created_at|date:"M d, Y" }}</td>
+            <td><a href="{% url 'staff:ticket_detail' ticket.id %}" class="btn btn-sm btn-outline-primary py-0">Reply</a></td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No tickets found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}<div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>{% endif %}
+</div>
+{% endblock %}

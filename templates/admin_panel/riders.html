@@ -1,0 +1,39 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Riders — Admin{% endblock %}
+{% block page_title %}Delivery Riders{% endblock %}
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/riders/" class="sidebar-link active"><i class="bi bi-bicycle"></i>Riders</a>
+<a href="/admin-panel/vendors/" class="sidebar-link"><i class="bi bi-shop"></i>Vendors</a>
+<a href="/admin-panel/customers/" class="sidebar-link"><i class="bi bi-people"></i>Customers</a>
+{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4">
+  {% for val, label in rider_statuses %}<a href="?status={{ val }}" class="btn btn-sm {% if status == val %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ label }}</a>{% endfor %}
+  <a href="?" class="btn btn-sm btn-outline-secondary">All</a>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th class="ps-3">Rider</th><th>Vehicle</th><th>Deliveries</th><th>Earnings</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for rider in page_obj %}
+          <tr>
+            <td class="ps-3"><div class="fw-semibold small">{{ rider.user.get_full_name }}</div><div class="text-muted" style="font-size:11px">{{ rider.user.email }}</div></td>
+            <td class="text-muted small">{{ rider.get_vehicle_type_display }} · {{ rider.vehicle_plate|default:"-" }}</td>
+            <td class="text-muted small">{{ rider.total_deliveries }}</td>
+            <td class="fw-semibold small">₦{{ rider.total_earnings|floatformat:0 }}</td>
+            <td><span class="badge {% if rider.status == 'active' %}bg-success{% elif rider.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ rider.get_status_display }}</span></td>
+            <td>{% if rider.status == 'pending' %}<a href="{% url 'admin_panel:approve_rider' rider.id %}" class="btn btn-success btn-sm py-0 fw-bold" onclick="return confirm('Approve this rider?')">Approve</a>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-4 text-muted">No riders found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}<div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>{% endif %}
+</div>
+{% endblock %}

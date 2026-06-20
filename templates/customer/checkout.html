@@ -1,0 +1,208 @@
+{% extends "base/base.html" %}
+{% block title %}Checkout — MAS Investment{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+    <div class="row g-4">
+        <!-- Left: Form -->
+        <div class="col-lg-7">
+            <form method="post" enctype="multipart/form-data" id="checkoutForm">
+                {% csrf_token %}
+
+                <!-- Customer Details -->
+                <div class="checkout-section mb-4">
+                    <h5 class="checkout-section-title"><span class="step-num">1</span>Your Details</h5>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Full Name <span class="text-danger">*</span></label>
+                            <input type="text" name="customer_name" class="form-control" value="{{ user.get_full_name }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input type="email" name="customer_email" class="form-control" value="{{ user.email }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Phone <span class="text-danger">*</span></label>
+                            <input type="tel" name="customer_phone" class="form-control" value="{{ user.phone }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recipient -->
+                <div class="checkout-section mb-4">
+                    <h5 class="checkout-section-title"><span class="step-num">2</span>Delivery Details</h5>
+                    <div class="form-check mb-3">
+                        <input type="checkbox" class="form-check-input" id="sameAsCustomer" name="recipient_same_as_customer" checked onchange="toggleRecipient(this)">
+                        <label class="form-check-label fw-semibold" for="sameAsCustomer">Recipient is same as me</label>
+                    </div>
+                    <div id="recipientFields" class="d-none">
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Recipient Name</label>
+                                <input type="text" name="recipient_name" class="form-control" placeholder="Full name of recipient">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Recipient Phone</label>
+                                <input type="tel" name="recipient_phone" class="form-control" placeholder="Phone number">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Delivery Address <span class="text-danger">*</span></label>
+                            <textarea name="recipient_address" class="form-control" rows="2" placeholder="House/flat number, street name..." required></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">City</label>
+                            <input type="text" name="delivery_city" class="form-control" placeholder="e.g. Lagos">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">State</label>
+                            <input type="text" name="delivery_state" class="form-control" placeholder="e.g. Lagos State">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-semibold">Order Notes (optional)</label>
+                            <textarea name="notes" class="form-control" rows="2" placeholder="Special instructions for delivery..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment -->
+                <div class="checkout-section mb-4">
+                    <h5 class="checkout-section-title"><span class="step-num">3</span>Payment Method</h5>
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="payment-option" for="payBank">
+                                <input type="radio" name="payment_method" id="payBank" value="bank_transfer" class="payment-radio" checked onchange="showReceiptUpload()">
+                                <div class="payment-option-inner">
+                                    <i class="bi bi-bank2 text-primary fs-3 mb-2 d-block"></i>
+                                    <div class="fw-bold">Bank Transfer</div>
+                                    <div class="text-muted small">Transfer & upload receipt</div>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="payment-option" for="payCash">
+                                <input type="radio" name="payment_method" id="payCash" value="cash_on_delivery" class="payment-radio" onchange="hideReceiptUpload()">
+                                <div class="payment-option-inner">
+                                    <i class="bi bi-cash-stack text-success fs-3 mb-2 d-block"></i>
+                                    <div class="fw-bold">Cash on Delivery</div>
+                                    <div class="text-muted small">Pay when you receive</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Bank Transfer Info + Receipt Upload -->
+                    <div id="bankSection" class="mt-3">
+                        <div class="bank-info p-3 rounded mb-3">
+                            <h6 class="fw-bold mb-2"><i class="bi bi-info-circle me-1 text-primary"></i>Bank Account Details</h6>
+                            <div class="row g-2 small">
+                                <div class="col-sm-6"><span class="text-muted">Bank:</span> <strong>First Bank Nigeria</strong></div>
+                                <div class="col-sm-6"><span class="text-muted">Account:</span> <strong>1234567890</strong></div>
+                                <div class="col-sm-6"><span class="text-muted">Name:</span> <strong>MAS Investment Ltd</strong></div>
+                                <div class="col-sm-6"><span class="text-muted">Amount:</span> <strong class="text-success">₦{{ cart.subtotal|floatformat:2 }}</strong></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Upload Payment Receipt <span class="text-danger">*</span></label>
+                            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('receiptFile').click()">
+                                <i class="bi bi-cloud-upload fs-2 text-muted mb-2 d-block"></i>
+                                <div class="fw-semibold">Click to upload or drag & drop</div>
+                                <div class="text-muted small">JPG, JPEG, PNG or PDF · Max 10MB</div>
+                                <div id="uploadPreview" class="mt-2 d-none">
+                                    <i class="bi bi-file-check text-success me-1"></i>
+                                    <span id="uploadFileName" class="text-success small fw-semibold"></span>
+                                </div>
+                            </div>
+                            <input type="file" name="receipt" id="receiptFile" class="d-none" accept=".jpg,.jpeg,.png,.pdf" onchange="previewReceipt(this)">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100 fw-bold" id="placeOrderBtn">
+                    <i class="bi bi-bag-check me-2"></i>Place Order — ₦{{ cart.subtotal|floatformat:2 }}
+                </button>
+            </form>
+        </div>
+
+        <!-- Right: Order Summary -->
+        <div class="col-lg-5">
+            <div class="order-summary sticky-top" style="top:80px">
+                <h5 class="fw-bold mb-3">Order Summary</h5>
+                <div class="order-items">
+                    {% for item in items %}
+                    <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                        {% with img=item.product.get_primary_image %}
+                        <div class="order-item-img flex-shrink-0">
+                            {% if img %}<img src="{{ img.image.url }}" alt="{{ item.product.name }}">{% else %}<div class="bg-light d-flex align-items-center justify-content-center h-100"><i class="bi bi-image text-muted"></i></div>{% endif %}
+                        </div>
+                        {% endwith %}
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">{{ item.product.name|truncatechars:40 }}</div>
+                            <div class="text-muted small">{{ item.product.vendor.business_name }}</div>
+                            <div class="d-flex justify-content-between mt-1">
+                                <span class="small text-muted">x{{ item.quantity }}</span>
+                                <span class="fw-bold small">₦{{ item.total_price|floatformat:2 }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="summary-totals mt-3">
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Subtotal</span>
+                        <span>₦{{ cart.subtotal|floatformat:2 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Delivery Fee</span>
+                        <span class="text-success">Free</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between fw-bold">
+                        <span>Total</span>
+                        <span class="text-primary fs-5">₦{{ cart.subtotal|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleRecipient(checkbox) {
+    document.getElementById('recipientFields').classList.toggle('d-none', checkbox.checked);
+}
+function showReceiptUpload() { document.getElementById('bankSection').style.display = 'block'; }
+function hideReceiptUpload() { document.getElementById('bankSection').style.display = 'none'; }
+
+function previewReceipt(input) {
+    if (input.files[0]) {
+        const preview = document.getElementById('uploadPreview');
+        const name = document.getElementById('uploadFileName');
+        name.textContent = input.files[0].name;
+        preview.classList.remove('d-none');
+        document.getElementById('uploadZone').classList.add('has-file');
+    }
+}
+
+// Drag & drop
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragging'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragging'));
+zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('dragging');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+        const input = document.getElementById('receiptFile');
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        input.files = dt.files;
+        previewReceipt(input);
+    }
+});
+</script>
+{% endblock %}

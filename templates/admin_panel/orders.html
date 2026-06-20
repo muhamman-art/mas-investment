@@ -1,0 +1,48 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Orders — Admin{% endblock %}
+{% block page_title %}All Orders{% endblock %}
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/orders/" class="sidebar-link active"><i class="bi bi-bag"></i>Orders</a>
+<a href="/admin-panel/vendors/" class="sidebar-link"><i class="bi bi-shop"></i>Vendors</a>
+<a href="/admin-panel/customers/" class="sidebar-link"><i class="bi bi-people"></i>Customers</a>
+<a href="/staff/receipts/" class="sidebar-link"><i class="bi bi-receipt"></i>Receipts</a>
+{% endblock %}
+{% block content %}
+<form method="get" class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2 d-flex gap-2 flex-wrap">
+    <input type="text" name="search" class="form-control form-control-sm" placeholder="Order # or customer email..." value="{{ search }}" style="max-width:260px">
+    <select name="status" class="form-select form-select-sm" style="max-width:180px">
+      <option value="">All Statuses</option>
+      {% for val, label in order_statuses %}<option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+    {% if search or status %}<a href="/admin-panel/orders/" class="btn btn-outline-secondary btn-sm">Clear</a>{% endif %}
+  </div>
+</form>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th class="ps-3">Order #</th><th>Customer</th><th>Amount</th><th>Payment</th><th>Status</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          {% for order in page_obj %}
+          <tr>
+            <td class="ps-3 fw-bold small">{{ order.order_number }}</td>
+            <td><div class="small fw-semibold">{{ order.customer.get_full_name }}</div><div class="text-muted" style="font-size:11px">{{ order.customer.email }}</div></td>
+            <td class="fw-bold">₦{{ order.total_amount|floatformat:2 }}</td>
+            <td><span class="badge {% if order.payment_status == 'verified' %}bg-success{% elif order.payment_status == 'awaiting_verification' %}bg-warning text-dark{% elif order.payment_status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ order.get_payment_status_display }}</span></td>
+            <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+            <td class="text-muted small">{{ order.created_at|date:"M d, Y" }}</td>
+            <td>{% if order.status == 'processing' %}<a href="/staff/orders/{{ order.id }}/assign-rider/" class="btn btn-sm btn-outline-primary py-0">Assign Rider</a>{% endif %}</td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7" class="text-center py-4 text-muted">No orders found</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}<div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>{% endif %}
+</div>
+{% endblock %}

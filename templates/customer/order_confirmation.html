@@ -1,0 +1,95 @@
+{% extends "base/base.html" %}
+{% block title %}Order Confirmed — MAS Investment{% endblock %}
+
+{% block content %}
+<div class="container py-5" style="max-width:680px">
+  <div class="text-center mb-4">
+    <div class="success-animation mb-3">
+      <div class="checkmark-circle bg-success d-flex align-items-center justify-content-center mx-auto" style="width:90px;height:90px;border-radius:50%">
+        <i class="bi bi-check2 text-white" style="font-size:3rem"></i>
+      </div>
+    </div>
+    <h2 class="fw-bold text-success mb-1">Order Placed!</h2>
+    <p class="text-muted">Thank you for your order. We've received it and will process it shortly.</p>
+    <div class="badge bg-primary-subtle text-primary fs-6 px-4 py-2 rounded-pill">
+      Order #{{ order.order_number }}
+    </div>
+  </div>
+
+  <!-- Order Status Banner -->
+  <div class="alert {% if order.status == 'awaiting_verification' %}alert-warning{% elif order.status == 'processing' %}alert-success{% else %}alert-info{% endif %} mb-4">
+    <i class="bi bi-{% if order.status == 'awaiting_verification' %}clock{% elif order.status == 'processing' %}check-circle{% else %}info-circle{% endif %} me-2"></i>
+    <strong>Status:</strong> {{ order.get_status_display }}
+    {% if order.status == 'awaiting_verification' %}
+    — Your receipt is under review. We'll notify you once verified.
+    {% elif order.status == 'processing' %}
+    — Your payment is confirmed and we're processing your order!
+    {% endif %}
+  </div>
+
+  <!-- Order Details Card -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-0"><h6 class="fw-bold">Order Details</h6></div>
+    <div class="card-body">
+      <div class="row g-3 small">
+        <div class="col-6"><span class="text-muted d-block">Order Number</span><span class="fw-bold">{{ order.order_number }}</span></div>
+        <div class="col-6"><span class="text-muted d-block">Date</span><span class="fw-semibold">{{ order.created_at|date:"M d, Y H:i" }}</span></div>
+        <div class="col-6"><span class="text-muted d-block">Payment Method</span><span class="fw-semibold">{{ order.get_payment_method_display }}</span></div>
+        <div class="col-6"><span class="text-muted d-block">Total Amount</span><span class="fw-bold text-primary fs-6">₦{{ order.total_amount|floatformat:2 }}</span></div>
+        <div class="col-12">
+          <span class="text-muted d-block">Delivery To</span>
+          <span class="fw-semibold">{{ order.effective_recipient_name }} · {{ order.effective_recipient_phone }}</span>
+          {% if order.recipient_address %}<div class="text-muted">{{ order.recipient_address }}</div>{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Items -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-0"><h6 class="fw-bold">Items Ordered</h6></div>
+    <div class="card-body p-0">
+      {% for item in order.items.all %}
+      <div class="d-flex justify-content-between align-items-center p-3 {% if not forloop.last %}border-bottom{% endif %} small">
+        <div>
+          <div class="fw-semibold">{{ item.product_name }}</div>
+          <div class="text-muted">{{ item.vendor.business_name }} &times; {{ item.quantity }}</div>
+        </div>
+        <div class="fw-bold">₦{{ item.subtotal|floatformat:2 }}</div>
+      </div>
+      {% endfor %}
+      <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light fw-bold">
+        <span>Total</span>
+        <span class="text-primary">₦{{ order.total_amount|floatformat:2 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Next Steps -->
+  {% if order.payment_method == 'bank_transfer' and order.status == 'pending' %}
+  <div class="card border-warning border-2 mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold text-warning mb-2"><i class="bi bi-exclamation-triangle me-2"></i>Action Required</h6>
+      <p class="small mb-3">Please upload your payment receipt to confirm your order.</p>
+      <form method="post" action="{% url 'customer:upload_receipt' order.id %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="receipt" class="form-control form-control-sm mb-2" accept=".jpg,.jpeg,.png,.pdf" required>
+        <button type="submit" class="btn btn-warning btn-sm fw-bold w-100">
+          <i class="bi bi-upload me-1"></i>Upload Receipt
+        </button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Actions -->
+  <div class="d-flex gap-3 justify-content-center flex-wrap">
+    <a href="{% url 'customer:order_detail' order.id %}" class="btn btn-primary px-4">
+      <i class="bi bi-bag me-2"></i>Track Order
+    </a>
+    <a href="{% url 'products:shop' %}" class="btn btn-outline-primary px-4">
+      <i class="bi bi-shop me-2"></i>Continue Shopping
+    </a>
+  </div>
+</div>
+{% endblock %}

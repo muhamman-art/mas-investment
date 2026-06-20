@@ -1,0 +1,95 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Products — Vendor{% endblock %}
+{% block page_title %}My Products{% endblock %}
+{% block sidebar_nav %}
+<a href="/vendor/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/vendor/products/" class="sidebar-link active"><i class="bi bi-box-seam"></i>Products</a>
+<a href="/vendor/products/add/" class="sidebar-link"><i class="bi bi-plus-circle"></i>Add Product</a>
+<a href="/vendor/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/vendor/wallet/" class="sidebar-link"><i class="bi bi-wallet2"></i>Wallet</a>
+{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+  <div>
+    <h5 class="fw-bold mb-0">Products</h5>
+    <small class="text-muted">{{ page_obj.paginator.count }} product{{ page_obj.paginator.count|pluralize }}</small>
+  </div>
+  <a href="/vendor/products/add/" class="btn btn-primary fw-bold btn-sm"><i class="bi bi-plus-circle me-1"></i>Add Product</a>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="d-flex gap-2 flex-wrap align-items-center">
+      <input type="text" name="search" class="form-control form-control-sm" placeholder="Search products..." value="{{ search }}" style="max-width:220px">
+      <select name="status" class="form-select form-select-sm" style="max-width:150px" onchange="this.form.submit()">
+        <option value="">All Status</option>
+        {% for val, label in product_statuses %}<option value="{{ val }}" {% if status == val %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i></button>
+      {% if search or status %}<a href="/vendor/products/" class="btn btn-outline-secondary btn-sm">Clear</a>{% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">Product</th>
+            <th>Price</th>
+            <th>Stock</th>
+            <th>Status</th>
+            <th>Sold</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for product in page_obj %}
+          <tr>
+            <td class="ps-3">
+              <div class="d-flex align-items-center gap-2">
+                {% with img=product.get_primary_image %}
+                {% if img %}<img src="{{ img.image.url }}" class="rounded" style="width:44px;height:44px;object-fit:cover">
+                {% else %}<div class="rounded bg-light d-flex align-items-center justify-content-center" style="width:44px;height:44px"><i class="bi bi-image text-muted"></i></div>{% endif %}
+                {% endwith %}
+                <div>
+                  <div class="fw-semibold small text-truncate" style="max-width:180px">{{ product.name }}</div>
+                  <div class="text-muted" style="font-size:11px">{{ product.category.name|default:"Uncategorized" }}</div>
+                </div>
+              </div>
+            </td>
+            <td class="fw-bold text-primary">₦{{ product.price|floatformat:2 }}</td>
+            <td>
+              <span class="{% if product.stock == 0 %}text-danger fw-bold{% elif product.is_low_stock %}text-warning fw-bold{% else %}text-success{% endif %}">
+                {{ product.stock }}
+              </span>
+              {% if product.is_low_stock %}<span class="badge bg-warning text-dark ms-1" style="font-size:9px">Low</span>{% endif %}
+            </td>
+            <td><span class="badge {% if product.status == 'active' %}bg-success{% elif product.status == 'draft' %}bg-secondary{% elif product.status == 'out_of_stock' %}bg-danger{% else %}bg-warning text-dark{% endif %}">{{ product.get_status_display }}</span></td>
+            <td class="text-muted small">{{ product.total_sold }}</td>
+            <td>
+              <div class="d-flex gap-1">
+                <a href="{% url 'products:product_detail' product.slug %}" class="btn btn-sm btn-outline-secondary py-0" target="_blank" title="Preview"><i class="bi bi-eye"></i></a>
+                <a href="/vendor/products/{{ product.id }}/edit/" class="btn btn-sm btn-outline-primary py-0" title="Edit"><i class="bi bi-pencil"></i></a>
+                <form method="post" action="/vendor/products/{{ product.id }}/delete/" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-danger py-0" onclick="return confirm('Deactivate this product?')" title="Delete"><i class="bi bi-trash"></i></button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-5 text-muted"><i class="bi bi-box-seam fs-2 d-block mb-2"></i>No products yet.<br><a href="/vendor/products/add/" class="btn btn-primary btn-sm mt-2">Add Your First Product</a></td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>
+  {% endif %}
+</div>
+{% endblock %}

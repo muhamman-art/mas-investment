@@ -1,0 +1,127 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Delivery #{{ assignment.order.order_number }}{% endblock %}
+{% block page_title %}Delivery Detail{% endblock %}
+
+{% block sidebar_nav %}
+<a href="/rider/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/rider/deliveries/" class="sidebar-link active"><i class="bi bi-truck"></i>Deliveries</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Delivery Status</h6></div>
+      <div class="card-body">
+        <!-- Track -->
+        <div class="delivery-status-track mb-3">
+          {% with s=assignment.status %}
+          <div class="track-step {% if s != 'assigned' %}done{% else %}active{% endif %}"><div class="track-dot"><i class="bi bi-bell"></i></div><div class="track-label">Assigned</div></div>
+          <div class="track-step {% if s in 'picked_up,out_for_delivery,delivered' %}done{% elif s == 'accepted' %}active{% endif %}"><div class="track-dot"><i class="bi bi-check"></i></div><div class="track-label">Accepted</div></div>
+          <div class="track-step {% if s in 'out_for_delivery,delivered' %}done{% elif s == 'picked_up' %}active{% endif %}"><div class="track-dot"><i class="bi bi-box"></i></div><div class="track-label">Picked Up</div></div>
+          <div class="track-step {% if s == 'delivered' %}done{% elif s == 'out_for_delivery' %}active{% endif %}"><div class="track-dot"><i class="bi bi-truck"></i></div><div class="track-label">En Route</div></div>
+          <div class="track-step {% if s == 'delivered' %}done{% endif %}"><div class="track-dot"><i class="bi bi-house-check"></i></div><div class="track-label">Delivered</div></div>
+          {% endwith %}
+        </div>
+        <div class="text-center"><span class="badge bg-primary px-3 py-2 fs-6">{{ assignment.get_status_display }}</span></div>
+      </div>
+    </div>
+
+    <!-- Customer / Recipient -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Recipient Details</h6></div>
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="avatar-placeholder flex-shrink-0">{{ assignment.order.effective_recipient_name|first }}</div>
+          <div>
+            <div class="fw-bold">{{ assignment.order.effective_recipient_name }}</div>
+            <div class="text-muted small">{{ assignment.order.effective_recipient_phone }}</div>
+          </div>
+          <a href="tel:{{ assignment.order.effective_recipient_phone }}" class="btn btn-success btn-sm ms-auto fw-bold">
+            <i class="bi bi-telephone me-1"></i>Call
+          </a>
+        </div>
+        {% if assignment.order.recipient_address %}
+        <div class="bg-light rounded p-3 small">
+          <i class="bi bi-geo-alt text-danger me-2"></i>{{ assignment.order.recipient_address }}
+          {% if assignment.order.delivery_city %}, {{ assignment.order.delivery_city }}, {{ assignment.order.delivery_state }}{% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Order Items -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Items to Deliver</h6></div>
+      <div class="card-body p-0">
+        {% for item in assignment.order.items.all %}
+        <div class="d-flex justify-content-between p-3 {% if not forloop.last %}border-bottom{% endif %} small">
+          <div><div class="fw-semibold">{{ item.product_name }}</div><div class="text-muted">×{{ item.quantity }}</div></div>
+          <div class="fw-bold">₦{{ item.subtotal|floatformat:2 }}</div>
+        </div>
+        {% endfor %}
+        <div class="d-flex justify-content-between p-3 border-top fw-bold bg-light">
+          <span>Order Total</span><span class="text-primary">₦{{ assignment.order.total_amount|floatformat:2 }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Update Delivery Status</h6></div>
+      <div class="card-body">
+        <form method="post" action="/rider/deliveries/{{ assignment.id }}/update/">
+          {% csrf_token %}
+          <div class="d-grid gap-2">
+            {% if assignment.status == 'assigned' %}
+            <button type="submit" name="status" value="accepted" class="btn btn-success btn-lg fw-bold">
+              <i class="bi bi-check-circle me-2"></i>Accept Delivery
+            </button>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="collapse" data-bs-target="#rejectForm">
+              <i class="bi bi-x-circle me-1"></i>Reject Delivery
+            </button>
+            <div class="collapse" id="rejectForm">
+              <div class="border rounded p-3 mt-2">
+                <textarea name="reason" class="form-control form-control-sm mb-2" rows="2" placeholder="Reason for rejection..."></textarea>
+                <button type="submit" name="status" value="rejected" class="btn btn-danger btn-sm w-100">Confirm Reject</button>
+              </div>
+            </div>
+            {% elif assignment.status == 'accepted' %}
+            <button type="submit" name="status" value="picked_up" class="btn btn-primary btn-lg fw-bold">
+              <i class="bi bi-box me-2"></i>Mark as Picked Up
+            </button>
+            {% elif assignment.status == 'picked_up' %}
+            <button type="submit" name="status" value="out_for_delivery" class="btn btn-info btn-lg fw-bold text-white">
+              <i class="bi bi-truck me-2"></i>Out for Delivery
+            </button>
+            {% elif assignment.status == 'out_for_delivery' %}
+            <button type="submit" name="status" value="delivered" class="btn btn-success btn-lg fw-bold" onclick="return confirm('Confirm delivery completed?')">
+              <i class="bi bi-house-check me-2"></i>Mark as Delivered
+            </button>
+            {% elif assignment.status == 'delivered' %}
+            <div class="alert alert-success text-center mb-0"><i class="bi bi-check-circle fs-3 d-block mb-1"></i><strong>Delivered Successfully!</strong><div class="small text-muted mt-1">{{ assignment.delivered_at|date:"M d, Y H:i" }}</div></div>
+            {% elif assignment.status == 'rejected' %}
+            <div class="alert alert-danger text-center mb-0"><i class="bi bi-x-circle fs-3 d-block mb-1"></i>Delivery Rejected</div>
+            {% endif %}
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Order Info -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Order Info</h6></div>
+      <div class="card-body small">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Order #</span><span class="fw-bold">{{ assignment.order.order_number }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Payment</span><span>{{ assignment.order.get_payment_method_display }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Payment Status</span>
+          <span class="badge {% if assignment.order.payment_status == 'verified' %}bg-success{% else %}bg-warning text-dark{% endif %}">{{ assignment.order.get_payment_status_display }}</span>
+        </div>
+        <div class="d-flex justify-content-between"><span class="text-muted">Assigned</span><span>{{ assignment.assigned_at|date:"M d, Y H:i" }}</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

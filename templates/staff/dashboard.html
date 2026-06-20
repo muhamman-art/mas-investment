@@ -1,0 +1,73 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Staff Dashboard — MAS Investment{% endblock %}
+{% block page_title %}Staff Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-section-label">Staff Panel</div>
+<a href="/staff/" class="sidebar-link active"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/staff/receipts/" class="sidebar-link"><i class="bi bi-receipt"></i>Receipts {% if pending_receipts > 0 %}<span class="badge bg-danger ms-auto">{{ pending_receipts }}</span>{% endif %}</a>
+<a href="/staff/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/staff/tickets/" class="sidebar-link"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-danger"><div class="stat-icon"><i class="bi bi-receipt"></i></div><div class="stat-info"><div class="stat-value">{{ pending_receipts }}</div><div class="stat-label">Pending Receipts</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-primary"><div class="stat-icon"><i class="bi bi-bag"></i></div><div class="stat-info"><div class="stat-value">{{ processing_orders }}</div><div class="stat-label">Processing Orders</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-warning"><div class="stat-icon"><i class="bi bi-headset"></i></div><div class="stat-info"><div class="stat-value">{{ open_tickets }}</div><div class="stat-label">Open Tickets</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="stat-card stat-card-success"><div class="stat-icon"><i class="bi bi-people"></i></div><div class="stat-info"><div class="stat-value">{{ total_customers }}</div><div class="stat-label">Total Customers</div></div></div></div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between">
+        <h6 class="fw-bold mb-0">Pending Receipts</h6>
+        <a href="/staff/receipts/" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        {% for receipt in recent_receipts %}
+        <div class="d-flex align-items-center p-3 {% if not forloop.last %}border-bottom{% endif %}">
+          <div class="flex-grow-1">
+            <div class="fw-semibold small">{{ receipt.order.order_number }}</div>
+            <div class="text-muted" style="font-size:12px">{{ receipt.order.customer.get_full_name }} · ₦{{ receipt.order.total_amount|floatformat:0 }}</div>
+            <div class="text-muted" style="font-size:11px">{{ receipt.uploaded_at|timesince }} ago</div>
+          </div>
+          <div class="d-flex gap-1">
+            <a href="{% url 'staff:approve_receipt' receipt.id %}" class="btn btn-success btn-sm py-0 fw-bold" onclick="return confirm('Approve payment?')"><i class="bi bi-check"></i></a>
+            <a href="{% url 'staff:receipt_detail' receipt.id %}" class="btn btn-outline-primary btn-sm py-0"><i class="bi bi-eye"></i></a>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 text-muted small"><i class="bi bi-check-all fs-3 d-block mb-1"></i>No pending receipts</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between">
+        <h6 class="fw-bold mb-0">Recent Orders</h6>
+        <a href="/staff/orders/" class="btn btn-sm btn-outline-primary">View All</a>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light"><tr><th class="ps-3">Order</th><th>Customer</th><th>Amount</th><th>Status</th></tr></thead>
+            <tbody>
+              {% for order in recent_orders %}
+              <tr>
+                <td class="ps-3 fw-semibold">{{ order.order_number }}</td>
+                <td class="text-truncate" style="max-width:110px">{{ order.customer.get_full_name }}</td>
+                <td>₦{{ order.total_amount|floatformat:0 }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

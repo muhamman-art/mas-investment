@@ -1,0 +1,32 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Deliveries — Rider{% endblock %}
+{% block page_title %}My Deliveries{% endblock %}
+{% block sidebar_nav %}
+<a href="/rider/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/rider/deliveries/" class="sidebar-link active"><i class="bi bi-truck"></i>Deliveries</a>
+{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4 flex-wrap">
+  <a href="?" class="btn btn-sm {% if not status %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
+  {% for val, label in statuses %}<a href="?status={{ val }}" class="btn btn-sm {% if status == val %}btn-primary{% else %}btn-outline-secondary{% endif %}">{{ label }}</a>{% endfor %}
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    {% for assignment in page_obj %}
+    <a href="/rider/deliveries/{{ assignment.id }}/" class="d-flex align-items-center p-3 {% if not forloop.last %}border-bottom{% endif %} text-decoration-none text-dark">
+      <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-3 flex-shrink-0" style="width:44px;height:44px"><i class="bi bi-truck text-primary"></i></div>
+      <div class="flex-grow-1">
+        <div class="fw-semibold small">{{ assignment.order.order_number }}</div>
+        <div class="text-muted" style="font-size:12px">{{ assignment.order.effective_recipient_name }} · {{ assignment.order.delivery_city|default:"" }}</div>
+        <div class="text-muted" style="font-size:11px">{{ assignment.assigned_at|date:"M d, Y H:i" }}</div>
+      </div>
+      <span class="badge {% if assignment.status == 'delivered' %}bg-success{% elif assignment.status == 'rejected' %}bg-danger{% elif assignment.status == 'assigned' %}bg-warning text-dark{% elif assignment.status == 'out_for_delivery' %}bg-info{% else %}bg-primary{% endif %} ms-2">{{ assignment.get_status_display }}</span>
+      <i class="bi bi-chevron-right text-muted ms-2"></i>
+    </a>
+    {% empty %}
+    <div class="text-center py-5 text-muted"><i class="bi bi-truck fs-2 d-block mb-2"></i>No deliveries found</div>
+    {% endfor %}
+  </div>
+  {% if page_obj.has_other_pages %}<div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>{% endif %}
+</div>
+{% endblock %}

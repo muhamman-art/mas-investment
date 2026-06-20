@@ -1,0 +1,26 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Reject Receipt — Staff{% endblock %}
+{% block page_title %}Reject Receipt{% endblock %}
+{% block sidebar_nav %}
+<a href="/staff/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/staff/receipts/" class="sidebar-link active"><i class="bi bi-receipt"></i>Receipts</a>
+{% endblock %}
+{% block content %}
+<div style="max-width:560px">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold text-danger"><i class="bi bi-x-circle me-2"></i>Reject Payment Receipt</h6></div>
+    <div class="card-body">
+      <div class="alert alert-warning small mb-3"><i class="bi bi-exclamation-triangle me-1"></i>The customer will be notified and can re-upload a new receipt.</div>
+      <div class="mb-3 small"><strong>Order:</strong> {{ receipt.order.order_number }} · ₦{{ receipt.order.total_amount|floatformat:2 }}<br><strong>Customer:</strong> {{ receipt.order.customer.get_full_name }}</div>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3"><label class="form-label fw-semibold small">Rejection Reason <span class="text-danger">*</span></label><textarea name="rejection_reason" class="form-control" rows="4" placeholder="e.g. Receipt image is blurry, amount does not match, transfer not received..." required></textarea></div>
+        <div class="d-flex gap-2">
+          <button type="submit" class="btn btn-danger fw-bold"><i class="bi bi-x-circle me-2"></i>Reject Receipt</button>
+          <a href="{% url 'staff:receipt_detail' receipt.id %}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

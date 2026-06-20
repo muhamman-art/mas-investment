@@ -1,0 +1,113 @@
+{% extends "base/base.html" %}
+{% block title %}Shopping Cart — MAS Investment{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <h4 class="fw-bold mb-4"><i class="bi bi-cart3 me-2 text-primary"></i>Shopping Cart
+    <span class="badge bg-primary ms-2">{{ cart.total_items }}</span>
+  </h4>
+
+  {% if items %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          {% for item in items %}
+          <div class="cart-item d-flex gap-3 p-3 {% if not forloop.last %}border-bottom{% endif %}">
+            {% with img=item.product.get_primary_image %}
+            <a href="{% url 'products:product_detail' item.product.slug %}">
+              {% if img %}<img src="{{ img.image.url }}" alt="{{ item.product.name }}" class="rounded-3" style="width:90px;height:90px;object-fit:cover;flex-shrink:0">
+              {% else %}<div class="rounded-3 bg-light d-flex align-items-center justify-content-center flex-shrink-0" style="width:90px;height:90px"><i class="bi bi-image text-secondary fs-3"></i></div>{% endif %}
+            </a>
+            {% endwith %}
+            <div class="flex-grow-1 min-w-0">
+              <a href="{% url 'products:product_detail' item.product.slug %}" class="text-decoration-none text-dark fw-semibold d-block text-truncate">{{ item.product.name }}</a>
+              <div class="text-muted small mb-2"><i class="bi bi-shop me-1"></i>{{ item.product.vendor.business_name }}</div>
+              <div class="d-flex align-items-center gap-3 flex-wrap">
+                <span class="text-primary fw-bold">₦{{ item.price_at_add|floatformat:2 }}</span>
+                <!-- Qty stepper -->
+                <form method="post" action="{% url 'products:update_cart' item.id %}" class="d-flex align-items-center">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="update">
+                  <div class="qty-wrap d-flex border rounded-3 overflow-hidden" style="height:32px">
+                    <button type="button" class="btn btn-light border-0 px-2" onclick="stepQty(this,-1);this.closest('form').submit()"><i class="bi bi-dash small"></i></button>
+                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}" class="form-control border-0 text-center fw-bold p-0" style="width:46px;font-size:13px" onchange="this.closest('form').submit()">
+                    <button type="button" class="btn btn-light border-0 px-2" onclick="stepQty(this,1);this.closest('form').submit()"><i class="bi bi-plus small"></i></button>
+                  </div>
+                </form>
+                <span class="fw-bold text-dark">₦{{ item.total_price|floatformat:2 }}</span>
+              </div>
+            </div>
+            <div class="flex-shrink-0">
+              <form method="post" action="{% url 'products:update_cart' item.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="remove">
+                <button type="submit" class="btn btn-sm btn-outline-danger" title="Remove"><i class="bi bi-trash"></i></button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mt-3 d-flex gap-2">
+        <a href="{% url 'products:shop' %}" class="btn btn-outline-primary">
+          <i class="bi bi-arrow-left me-1"></i>Continue Shopping
+        </a>
+      </div>
+    </div>
+
+    <!-- Order Summary -->
+    <div class="col-lg-4">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-0 pt-3 pb-0">
+          <h6 class="fw-bold">Order Summary</h6>
+        </div>
+        <div class="card-body">
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Subtotal ({{ cart.total_items }} items)</span>
+            <span class="fw-semibold">₦{{ cart.subtotal|floatformat:2 }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2 small">
+            <span class="text-muted">Delivery Fee</span>
+            <span class="text-success fw-semibold">Free</span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold mb-4">
+            <span>Total</span>
+            <span class="text-primary fs-5">₦{{ cart.subtotal|floatformat:2 }}</span>
+          </div>
+          {% if user.is_authenticated %}
+          <a href="{% url 'orders:checkout' %}" class="btn btn-primary w-100 btn-lg fw-bold">
+            <i class="bi bi-bag-check me-2"></i>Proceed to Checkout
+          </a>
+          {% else %}
+          <a href="{% url 'accounts:login' %}?next={% url 'orders:checkout' %}" class="btn btn-primary w-100 btn-lg fw-bold">
+            <i class="bi bi-lock me-2"></i>Login to Checkout
+          </a>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Promo box -->
+      <div class="card border-0 shadow-sm mt-3">
+        <div class="card-body">
+          <div class="d-flex align-items-center gap-2 text-success mb-1"><i class="bi bi-shield-check fs-5"></i><span class="fw-semibold small">Safe & Secure Checkout</span></div>
+          <div class="d-flex align-items-center gap-2 text-primary mb-1"><i class="bi bi-truck fs-5"></i><span class="fw-semibold small">Free Delivery Available</span></div>
+          <div class="d-flex align-items-center gap-2 text-warning"><i class="bi bi-arrow-return-left fs-5"></i><span class="fw-semibold small">7-Day Return Policy</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:80px">🛒</div>
+    <h4 class="fw-bold mt-3 mb-1">Your cart is empty</h4>
+    <p class="text-muted">Looks like you haven't added anything yet.</p>
+    <a href="{% url 'products:shop' %}" class="btn btn-primary btn-lg mt-2 px-5">
+      <i class="bi bi-bag me-2"></i>Start Shopping
+    </a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,137 @@
+{% extends "base/base.html" %}
+{% block title %}Create Account — MAS Investment{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="max-width:580px">
+    <div class="auth-card">
+        <div class="auth-logo text-center mb-4">
+            <a href="/" class="text-decoration-none">
+                <div class="d-flex align-items-center justify-content-center gap-2">
+                    <div class="brand-icon-lg"><i class="bi bi-gem"></i></div>
+                    <div>
+                        <div class="fw-800 text-dark" style="font-size:24px;line-height:1">MAS</div>
+                        <div class="text-warning fw-bold" style="font-size:11px;letter-spacing:3px">INVESTMENT</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <h4 class="text-center fw-bold mb-1">Create Account</h4>
+        <p class="text-center text-muted small mb-4">Join thousands of happy customers</p>
+
+        <!-- Role Tabs -->
+        <div class="role-tabs mb-4">
+            {% for value, label in role_choices %}
+            <input type="radio" class="role-tab-input" name="role_tab" id="tab_{{ value }}" value="{{ value }}" {% if forloop.first %}checked{% endif %}>
+            <label class="role-tab-label" for="tab_{{ value }}">
+                <i class="bi bi-{% if value == 'customer' %}person{% elif value == 'vendor' %}shop{% else %}bicycle{% endif %} me-1"></i>
+                {{ label }}
+            </label>
+            {% endfor %}
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate id="registerForm">
+            {% csrf_token %}
+            <input type="hidden" name="role" id="selectedRole" value="customer">
+
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">First Name <span class="text-danger">*</span></label>
+                    <input type="text" name="first_name" class="form-control" placeholder="John" value="{{ form_data.first_name|default:'' }}" required>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Last Name <span class="text-danger">*</span></label>
+                    <input type="text" name="last_name" class="form-control" placeholder="Doe" value="{{ form_data.last_name|default:'' }}" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Email Address <span class="text-danger">*</span></label>
+                    <input type="email" name="email" class="form-control" placeholder="john@email.com" value="{{ form_data.email|default:'' }}" required>
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold small">Phone Number</label>
+                    <input type="tel" name="phone" class="form-control" placeholder="+234 800 000 0000" value="{{ form_data.phone|default:'' }}">
+                </div>
+
+                <!-- Vendor-specific fields -->
+                <div class="col-12 vendor-fields d-none">
+                    <hr class="my-1">
+                    <p class="small fw-semibold text-muted mb-2">Business Information</p>
+                    <input type="text" name="business_name" class="form-control mb-2" placeholder="Business Name">
+                    <input type="text" name="business_address" class="form-control mb-2" placeholder="Business Address">
+                    <div class="row g-2">
+                        <div class="col-6"><input type="text" name="city" class="form-control" placeholder="City"></div>
+                        <div class="col-6"><input type="text" name="state" class="form-control" placeholder="State"></div>
+                    </div>
+                </div>
+
+                <!-- Rider-specific fields -->
+                <div class="col-12 rider-fields d-none">
+                    <hr class="my-1">
+                    <p class="small fw-semibold text-muted mb-2">Rider Information</p>
+                    <select name="vehicle_type" class="form-select">
+                        <option value="motorcycle">Motorcycle</option>
+                        <option value="bicycle">Bicycle</option>
+                        <option value="car">Car</option>
+                        <option value="van">Van</option>
+                    </select>
+                </div>
+
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" name="password" id="pwd" class="form-control border-end-0" placeholder="Min. 8 characters" required>
+                        <button type="button" class="input-group-text bg-white" onclick="togglePassword('pwd', this)"><i class="bi bi-eye text-muted"></i></button>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Confirm Password <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" name="password2" id="pwd2" class="form-control border-end-0" placeholder="Repeat password" required>
+                        <button type="button" class="input-group-text bg-white" onclick="togglePassword('pwd2', this)"><i class="bi bi-eye text-muted"></i></button>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="form-check">
+                        <input type="checkbox" class="form-check-input" id="agreeTerms" required>
+                        <label class="form-check-label small" for="agreeTerms">
+                            I agree to the <a href="#" class="text-primary">Terms of Service</a> and <a href="#" class="text-primary">Privacy Policy</a>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary w-100 btn-lg fw-bold">
+                        <i class="bi bi-person-plus me-2"></i>Create Account
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <p class="text-center text-muted small mt-3 mb-0">
+            Already have an account?
+            <a href="{% url 'accounts:login' %}" class="text-primary fw-semibold text-decoration-none">Sign In</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_js %}
+<script>
+// Role tab logic
+document.querySelectorAll('.role-tab-input').forEach(input => {
+    input.addEventListener('change', function() {
+        document.getElementById('selectedRole').value = this.value;
+        document.querySelectorAll('.vendor-fields, .rider-fields').forEach(el => el.classList.add('d-none'));
+        if (this.value === 'vendor') document.querySelector('.vendor-fields').classList.remove('d-none');
+        if (this.value === 'rider') document.querySelector('.rider-fields').classList.remove('d-none');
+    });
+});
+// Password strength
+document.getElementById('pwd').addEventListener('input', function() {
+    const val = this.value;
+    this.classList.remove('is-valid', 'is-invalid');
+    if (val.length >= 8) this.classList.add('is-valid');
+    else if (val.length > 0) this.classList.add('is-invalid');
+});
+</script>
+{% endblock %}

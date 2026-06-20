@@ -1,0 +1,233 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Admin Dashboard — MAS Investment{% endblock %}
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block sidebar_nav %}
+<div class="nav-section-label">Main</div>
+<a href="/admin-panel/" class="sidebar-link active"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/staff/receipts/" class="sidebar-link"><i class="bi bi-receipt"></i>Payments</a>
+
+<div class="nav-section-label">People</div>
+<a href="/admin-panel/customers/" class="sidebar-link"><i class="bi bi-people"></i>Customers</a>
+<a href="/admin-panel/vendors/" class="sidebar-link"><i class="bi bi-shop"></i>Vendors</a>
+<a href="/admin-panel/riders/" class="sidebar-link"><i class="bi bi-bicycle"></i>Riders</a>
+<a href="/admin-panel/staff/" class="sidebar-link"><i class="bi bi-person-badge"></i>Staff</a>
+
+<div class="nav-section-label">Finance</div>
+<a href="/admin-panel/withdrawals/" class="sidebar-link"><i class="bi bi-wallet2"></i>Withdrawals</a>
+<a href="/admin-panel/analytics/" class="sidebar-link"><i class="bi bi-bar-chart-line"></i>Analytics</a>
+<a href="/staff/tickets/" class="sidebar-link"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+    {% with cards=forloop %}
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-currency-dollar"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">₦{{ total_revenue|floatformat:0 }}</div>
+                <div class="stat-label">Total Revenue</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="bi bi-bag-check"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_orders }}</div>
+                <div class="stat-label">Total Orders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-info">
+            <div class="stat-icon"><i class="bi bi-people"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_customers }}</div>
+                <div class="stat-label">Customers</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="bi bi-shop"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_vendors }}</div>
+                <div class="stat-label">Vendors</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-secondary">
+            <div class="stat-icon"><i class="bi bi-bicycle"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ total_riders }}</div>
+                <div class="stat-label">Riders</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-danger">
+            <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ pending_payments }}</div>
+                <div class="stat-label">Pending Payments</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-orange">
+            <div class="stat-icon"><i class="bi bi-truck"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ pending_deliveries }}</div>
+                <div class="stat-label">Pending Deliveries</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card stat-card-purple">
+            <div class="stat-icon"><i class="bi bi-headset"></i></div>
+            <div class="stat-info">
+                <div class="stat-value">{{ open_tickets }}</div>
+                <div class="stat-label">Open Tickets</div>
+            </div>
+        </div>
+    </div>
+    {% endwith %}
+</div>
+
+<!-- Charts -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
+                <h6 class="mb-0 fw-bold">Revenue & Orders (Last 30 Days)</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-3">
+                <h6 class="mb-0 fw-bold">Pending Vendors</h6>
+            </div>
+            <div class="card-body p-0">
+                {% for vendor in recent_vendors %}
+                <div class="d-flex align-items-center p-3 border-bottom">
+                    {% if vendor.logo %}
+                        <img src="{{ vendor.logo.url }}" class="rounded-circle me-2" width="36" height="36" style="object-fit:cover">
+                    {% else %}
+                        <div class="avatar-placeholder-sm me-2">{{ vendor.business_name|first }}</div>
+                    {% endif %}
+                    <div class="flex-grow-1 overflow-hidden">
+                        <div class="fw-semibold small text-truncate">{{ vendor.business_name }}</div>
+                        <div class="text-muted" style="font-size:11px">{{ vendor.created_at|date:"M d, Y" }}</div>
+                    </div>
+                    <a href="{% url 'admin_panel:approve_vendor' vendor.id %}" class="btn btn-success btn-sm py-0 px-2">Approve</a>
+                </div>
+                {% empty %}
+                <div class="text-center text-muted py-4"><i class="bi bi-check-all fs-3 d-block mb-1"></i>No pending vendors</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 d-flex justify-content-between align-items-center pt-3">
+        <h6 class="mb-0 fw-bold">Recent Orders</h6>
+        <a href="/admin-panel/orders/" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Order #</th>
+                        <th>Customer</th>
+                        <th>Amount</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td class="ps-3 fw-semibold small">{{ order.order_number }}</td>
+                        <td>
+                            <div class="small fw-semibold">{{ order.customer.get_full_name }}</div>
+                            <div class="text-muted" style="font-size:11px">{{ order.customer.email }}</div>
+                        </td>
+                        <td class="fw-bold">₦{{ order.total_amount|floatformat:2 }}</td>
+                        <td>
+                            <span class="badge {% if order.payment_status == 'verified' %}bg-success{% elif order.payment_status == 'awaiting_verification' %}bg-warning text-dark{% elif order.payment_status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
+                                {{ order.get_payment_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="status-badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                        </td>
+                        <td class="text-muted small">{{ order.created_at|date:"M d, Y" }}</td>
+                        <td><a href="/admin-panel/orders/?search={{ order.order_number }}" class="btn btn-sm btn-outline-secondary py-0">View</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const labels = {{ chart_labels|safe }};
+const revenueData = {{ chart_revenue|safe }};
+const ordersData = {{ chart_orders|safe }};
+
+const ctx = document.getElementById('revenueChart').getContext('2d');
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Revenue (₦)',
+                data: revenueData,
+                backgroundColor: 'rgba(79, 70, 229, 0.8)',
+                borderRadius: 6,
+                yAxisID: 'y',
+            },
+            {
+                label: 'Orders',
+                data: ordersData,
+                type: 'line',
+                borderColor: '#f59e0b',
+                backgroundColor: 'rgba(245,158,11,0.1)',
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#f59e0b',
+                yAxisID: 'y1',
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { position: 'top' } },
+        scales: {
+            y: { type: 'linear', display: true, position: 'left', ticks: { callback: v => '₦' + v.toLocaleString() } },
+            y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false } }
+        }
+    }
+});
+</script>
+{% endblock %}

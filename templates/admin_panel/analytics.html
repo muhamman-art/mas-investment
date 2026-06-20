@@ -1,0 +1,126 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Analytics — Admin{% endblock %}
+{% block page_title %}Analytics & Reports{% endblock %}
+
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/admin-panel/vendors/" class="sidebar-link"><i class="bi bi-shop"></i>Vendors</a>
+<a href="/admin-panel/analytics/" class="sidebar-link active"><i class="bi bi-bar-chart-line"></i>Analytics</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">Monthly Revenue (12 Months)</h6></div>
+      <div class="card-body"><canvas id="monthlyChart" height="300"></canvas></div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">Top 5 Products</h6></div>
+      <div class="card-body p-0">
+        {% for product in top_products|slice:":5" %}
+        <div class="d-flex align-items-center p-3 {% if not forloop.last %}border-bottom{% endif %}">
+          <div class="flex-shrink-0 me-2 fw-bold text-muted" style="width:20px;font-size:13px">{{ forloop.counter }}</div>
+          <div class="flex-grow-1 overflow-hidden">
+            <div class="small fw-semibold text-truncate">{{ product.name }}</div>
+            <div class="text-muted" style="font-size:11px">{{ product.vendor.business_name }}</div>
+          </div>
+          <div class="ms-2 text-end">
+            <div class="small fw-bold">{{ product.total_sold }} sold</div>
+            <div class="text-muted" style="font-size:11px">₦{{ product.price|floatformat:0 }}</div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-4 text-muted small">No data yet</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-12">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold">Top Vendors by Sales</h6></div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0 small">
+            <thead class="table-light">
+              <tr><th class="ps-3">#</th><th>Vendor</th><th>Location</th><th>Total Sales</th><th>Orders</th><th>Commission Earned</th></tr>
+            </thead>
+            <tbody>
+              {% for vendor in top_vendors %}
+              <tr>
+                <td class="ps-3 text-muted">{{ forloop.counter }}</td>
+                <td>
+                  <div class="fw-semibold">{{ vendor.business_name }}</div>
+                  <div class="text-muted" style="font-size:11px">{{ vendor.user.email }}</div>
+                </td>
+                <td class="text-muted">{{ vendor.city }}, {{ vendor.state }}</td>
+                <td class="fw-bold text-success">₦{{ vendor.total_sales|floatformat:2 }}</td>
+                <td>{{ vendor.total_orders }}</td>
+                <td class="text-muted">₦{{ vendor.total_sales|floatformat:0 }}</td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="6" class="text-center py-4 text-muted">No vendor data yet</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const monthlyData = {{ monthly|safe }};
+const labels = monthlyData.map(d => {
+  const date = new Date(d.month);
+  return date.toLocaleString('default', { month: 'short', year: '2-digit' });
+});
+const revenues = monthlyData.map(d => parseFloat(d.revenue || 0));
+const counts = monthlyData.map(d => parseInt(d.count || 0));
+
+const ctx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Revenue (₦)',
+        data: revenues,
+        backgroundColor: 'rgba(79,70,229,0.8)',
+        borderRadius: 6,
+        yAxisID: 'y',
+      },
+      {
+        label: 'Orders',
+        data: counts,
+        type: 'line',
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245,158,11,0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#f59e0b',
+        yAxisID: 'y1',
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { position: 'left', ticks: { callback: v => '₦' + v.toLocaleString() } },
+      y1: { position: 'right', grid: { drawOnChartArea: false } }
+    }
+  }
+});
+</script>
+{% endblock %}

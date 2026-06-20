@@ -1,0 +1,49 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Assign Rider — Staff{% endblock %}
+{% block page_title %}Assign Rider{% endblock %}
+{% block sidebar_nav %}
+<a href="/staff/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/staff/orders/" class="sidebar-link active"><i class="bi bi-bag"></i>Orders</a>
+{% endblock %}
+{% block content %}
+<div class="row g-4" style="max-width:800px">
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Order Details</h6></div>
+      <div class="card-body small">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Order #</span><span class="fw-bold">{{ order.order_number }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Customer</span><span>{{ order.customer.get_full_name }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Amount</span><span class="fw-bold text-primary">₦{{ order.total_amount|floatformat:2 }}</span></div>
+        <div class="d-flex justify-content-between"><span class="text-muted">Recipient</span><span>{{ order.effective_recipient_name }}</span></div>
+        {% if order.recipient_address %}<div class="mt-2 p-2 bg-light rounded text-muted">{{ order.recipient_address }}</div>{% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Available Riders</h6></div>
+      <div class="card-body p-0">
+        <form method="post">{% csrf_token %}
+          {% for rider in available_riders %}
+          <label class="d-flex align-items-center p-3 {% if not forloop.last %}border-bottom{% endif %} cursor-pointer" style="cursor:pointer">
+            <input type="radio" name="rider_id" value="{{ rider.id }}" class="me-3" required>
+            <div class="flex-grow-1">
+              <div class="fw-semibold small">{{ rider.user.get_full_name }}</div>
+              <div class="text-muted" style="font-size:12px"><i class="bi bi-bicycle me-1"></i>{{ rider.get_vehicle_type_display }} · {{ rider.total_deliveries }} deliveries</div>
+            </div>
+            <span class="badge bg-success">Available</span>
+          </label>
+          {% empty %}
+          <div class="text-center py-4 text-muted"><i class="bi bi-bicycle fs-3 d-block mb-1"></i>No available riders right now</div>
+          {% endfor %}
+          {% if available_riders %}
+          <div class="p-3 border-top">
+            <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="bi bi-truck me-2"></i>Assign Rider</button>
+          </div>
+          {% endif %}
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

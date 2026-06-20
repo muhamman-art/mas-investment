@@ -1,0 +1,63 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Ticket #{{ ticket.ticket_number }} — Staff{% endblock %}
+{% block page_title %}Ticket #{{ ticket.ticket_number }}{% endblock %}
+{% block sidebar_nav %}
+<a href="/staff/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/staff/tickets/" class="sidebar-link active"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between">
+        <h6 class="fw-bold mb-0">{{ ticket.subject }}</h6>
+        <span class="badge {% if ticket.status == 'open' %}bg-success{% elif ticket.status == 'in_progress' %}bg-primary{% elif ticket.status == 'resolved' %}bg-info{% else %}bg-secondary{% endif %}">{{ ticket.get_status_display }}</span>
+      </div>
+      <div class="card-body">
+        <div class="ticket-message customer-msg">
+          <div class="d-flex align-items-center gap-2 mb-2"><div class="avatar-placeholder-sm">{{ ticket.customer.first_name|first }}</div><div><div class="fw-semibold small">{{ ticket.customer.get_full_name }}</div><div class="text-muted" style="font-size:11px">{{ ticket.created_at|date:"M d, Y H:i" }}</div></div></div>
+          <p class="mb-0 small">{{ ticket.message|linebreaks }}</p>
+        </div>
+        {% for reply in ticket.replies.all %}
+        <div class="ticket-message {% if reply.is_staff_reply %}staff-reply{% else %}customer-msg{% endif %} mt-3">
+          <div class="d-flex align-items-center gap-2 mb-2"><div class="avatar-placeholder-sm {% if reply.is_staff_reply %}bg-primary{% endif %}">{{ reply.user.first_name|first }}</div><div><div class="fw-semibold small">{{ reply.user.get_full_name }} {% if reply.is_staff_reply %}<span class="badge bg-primary-subtle text-primary" style="font-size:9px">Staff</span>{% endif %}</div><div class="text-muted" style="font-size:11px">{{ reply.created_at|date:"M d, Y H:i" }}</div></div></div>
+          <p class="mb-0 small">{{ reply.message|linebreaks }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Staff Reply</h6></div>
+      <div class="card-body">
+        <form method="post">{% csrf_token %}
+          <input type="hidden" name="action" value="reply">
+          <textarea name="message" class="form-control mb-3" rows="4" placeholder="Type your reply..." required></textarea>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-send me-2"></i>Send Reply</button>
+            {% if ticket.status != 'resolved' %}
+            <button type="submit" form="resolveForm" class="btn btn-success fw-bold"><i class="bi bi-check-circle me-1"></i>Mark Resolved</button>
+            {% endif %}
+            {% if ticket.status != 'closed' %}
+            <button type="submit" form="closeForm" class="btn btn-outline-secondary">Close</button>
+            {% endif %}
+          </div>
+        </form>
+        <form id="resolveForm" method="post">{% csrf_token %}<input type="hidden" name="action" value="resolve"></form>
+        <form id="closeForm" method="post">{% csrf_token %}<input type="hidden" name="action" value="close"></form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Ticket Info</h6></div>
+      <div class="card-body small">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Customer</span><span class="fw-semibold">{{ ticket.customer.get_full_name }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Email</span><span>{{ ticket.customer.email }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Priority</span><span class="badge {% if ticket.priority == 'urgent' %}bg-danger{% elif ticket.priority == 'high' %}bg-warning text-dark{% else %}bg-secondary{% endif %}">{{ ticket.get_priority_display }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Created</span><span>{{ ticket.created_at|date:"M d, Y H:i" }}</span></div>
+        {% if ticket.assigned_to %}<div class="d-flex justify-content-between"><span class="text-muted">Assigned</span><span>{{ ticket.assigned_to.get_full_name }}</span></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

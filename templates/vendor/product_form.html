@@ -1,0 +1,114 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}{{ action }} Product — MAS Investment{% endblock %}
+{% block page_title %}{{ action }} Product{% endblock %}
+
+{% block sidebar_nav %}
+<a href="/vendor/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/vendor/products/" class="sidebar-link active"><i class="bi bi-box-seam"></i>Products</a>
+<a href="/vendor/products/add/" class="sidebar-link"><i class="bi bi-plus-circle"></i>Add Product</a>
+<a href="/vendor/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
+<a href="/vendor/wallet/" class="sidebar-link"><i class="bi bi-wallet2"></i>Wallet</a>
+{% endblock %}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <div class="row g-4">
+    <!-- Left Column -->
+    <div class="col-lg-8">
+      <div class="product-form-section">
+        <h6><i class="bi bi-info-circle me-2 text-primary"></i>Basic Information</h6>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Product Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Samsung Galaxy S24" value="{{ product.name|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Short Description</label>
+          <input type="text" name="short_description" class="form-control" maxlength="500" placeholder="Brief product summary (shown in listings)" value="{{ product.short_description|default:'' }}">
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Full Description <span class="text-danger">*</span></label>
+          <textarea name="description" class="form-control" rows="6" placeholder="Detailed product description..." required>{{ product.description|default:'' }}</textarea>
+        </div>
+      </div>
+
+      <div class="product-form-section">
+        <h6><i class="bi bi-currency-dollar me-2 text-success"></i>Pricing & Inventory</h6>
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label class="form-label fw-semibold small">Selling Price (₦) <span class="text-danger">*</span></label>
+            <input type="number" name="price" class="form-control" min="0" step="0.01" placeholder="0.00" value="{{ product.price|default:'' }}" required>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label fw-semibold small">Compare Price (₦)</label>
+            <input type="number" name="compare_price" class="form-control" min="0" step="0.01" placeholder="0.00 (optional)" value="{{ product.compare_price|default:'' }}">
+            <div class="form-text">Crossed-out original price</div>
+          </div>
+          <div class="col-sm-4">
+            <label class="form-label fw-semibold small">Stock Quantity <span class="text-danger">*</span></label>
+            <input type="number" name="stock" class="form-control" min="0" placeholder="0" value="{{ product.stock|default:'0' }}" required>
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold small">SKU</label>
+            <input type="text" name="sku" class="form-control" placeholder="Product code" value="{{ product.sku|default:'' }}">
+          </div>
+          <div class="col-sm-6">
+            <label class="form-label fw-semibold small">Weight (kg)</label>
+            <input type="number" name="weight" class="form-control" min="0" step="0.01" placeholder="0.00" value="{{ product.weight|default:'' }}">
+          </div>
+        </div>
+      </div>
+
+      <div class="product-form-section">
+        <h6><i class="bi bi-images me-2 text-info"></i>Product Images</h6>
+        <p class="text-muted small mb-3">Upload up to 5 images. First image will be the primary image.</p>
+        <input type="file" name="images" class="form-control" accept="image/*" multiple data-preview="imagePreview">
+        <div class="image-preview-grid mt-3" id="imagePreview">
+          {% if product and product.images.all %}
+            {% for img in product.images.all %}
+            <div class="image-preview-item"><img src="{{ img.image.url }}" alt="Product image">{% if img.is_primary %}<span class="position-absolute top-0 start-0 badge bg-primary" style="font-size:9px">Primary</span>{% endif %}</div>
+            {% endfor %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="col-lg-4">
+      <div class="product-form-section">
+        <h6><i class="bi bi-toggle-on me-2 text-warning"></i>Publish Settings</h6>
+        <div class="mb-3">
+          <label class="form-label fw-semibold small">Status</label>
+          <select name="status" class="form-select">
+            <option value="active" {% if product.status == 'active' or not product %}selected{% endif %}>Active (Visible)</option>
+            <option value="draft" {% if product.status == 'draft' %}selected{% endif %}>Draft (Hidden)</option>
+            <option value="inactive" {% if product.status == 'inactive' %}selected{% endif %}>Inactive</option>
+          </select>
+        </div>
+        <div class="form-check form-switch mb-2">
+          <input class="form-check-input" type="checkbox" name="is_featured" id="isFeatured" {% if product.is_featured %}checked{% endif %}>
+          <label class="form-check-label fw-semibold small" for="isFeatured">Featured Product</label>
+          <div class="form-text">Appears in featured sections</div>
+        </div>
+      </div>
+
+      <div class="product-form-section">
+        <h6><i class="bi bi-grid me-2 text-primary"></i>Category</h6>
+        <select name="category" class="form-select">
+          <option value="">-- Select Category --</option>
+          {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if product and product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="d-grid gap-2 mt-3">
+        <button type="submit" class="btn btn-primary btn-lg fw-bold">
+          <i class="bi bi-check2-circle me-2"></i>{{ action }} Product
+        </button>
+        <a href="/vendor/products/" class="btn btn-outline-secondary">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

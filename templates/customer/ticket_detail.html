@@ -1,0 +1,69 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Ticket #{{ ticket.ticket_number }} — MAS Investment{% endblock %}
+{% block page_title %}Ticket #{{ ticket.ticket_number }}{% endblock %}
+{% block sidebar_nav %}
+<a href="{% url 'products:shop' %}" class="sidebar-link"><i class="bi bi-shop"></i>Shop</a>
+<a href="/customer/orders/" class="sidebar-link"><i class="bi bi-bag"></i>My Orders</a>
+<a href="/customer/support/" class="sidebar-link active"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <!-- Original Message -->
+    <div class="card border-0 shadow-sm mb-3">
+      <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0">{{ ticket.subject }}</h6>
+        <span class="badge rounded-pill {% if ticket.status == 'open' %}bg-success{% elif ticket.status == 'in_progress' %}bg-primary{% elif ticket.status == 'resolved' %}bg-info{% else %}bg-secondary{% endif %}">{{ ticket.get_status_display }}</span>
+      </div>
+      <div class="card-body">
+        <div class="ticket-message customer-msg">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="avatar-placeholder-sm">{{ ticket.customer.first_name|first }}</div>
+            <div><div class="fw-semibold small">{{ ticket.customer.get_full_name }}</div><div class="text-muted" style="font-size:11px">{{ ticket.created_at|date:"M d, Y H:i" }}</div></div>
+          </div>
+          <p class="mb-0 small">{{ ticket.message|linebreaks }}</p>
+        </div>
+        {% for reply in ticket.replies.all %}
+        <div class="ticket-message {% if reply.is_staff_reply %}staff-reply{% else %}customer-msg{% endif %} mt-3">
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <div class="avatar-placeholder-sm {% if reply.is_staff_reply %}bg-primary{% endif %}">{{ reply.user.first_name|first }}</div>
+            <div>
+              <div class="fw-semibold small">{{ reply.user.get_full_name }} {% if reply.is_staff_reply %}<span class="badge bg-primary-subtle text-primary ms-1" style="font-size:10px">Support Team</span>{% endif %}</div>
+              <div class="text-muted" style="font-size:11px">{{ reply.created_at|date:"M d, Y H:i" }}</div>
+            </div>
+          </div>
+          <p class="mb-0 small">{{ reply.message|linebreaks }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if ticket.status != 'closed' %}
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Reply</h6></div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <textarea name="message" class="form-control mb-3" rows="4" placeholder="Add your reply..." required></textarea>
+          <button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-send me-2"></i>Send Reply</button>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="alert alert-secondary"><i class="bi bi-lock me-2"></i>This ticket is closed.</div>
+    {% endif %}
+  </div>
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Ticket Info</h6></div>
+      <div class="card-body small">
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Ticket #</span><span class="fw-semibold">{{ ticket.ticket_number }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Status</span><span class="badge {% if ticket.status == 'open' %}bg-success{% elif ticket.status == 'in_progress' %}bg-primary{% elif ticket.status == 'resolved' %}bg-info{% else %}bg-secondary{% endif %}">{{ ticket.get_status_display }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Priority</span><span>{{ ticket.get_priority_display }}</span></div>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted">Created</span><span>{{ ticket.created_at|date:"M d, Y" }}</span></div>
+        {% if ticket.assigned_to %}<div class="d-flex justify-content-between"><span class="text-muted">Assigned To</span><span>{{ ticket.assigned_to.get_full_name }}</span></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Wishlist — MAS Investment{% endblock %}
+{% block page_title %}My Wishlist{% endblock %}
+{% block sidebar_nav %}
+<a href="{% url 'products:shop' %}" class="sidebar-link"><i class="bi bi-shop"></i>Shop</a>
+<a href="/customer/orders/" class="sidebar-link"><i class="bi bi-bag"></i>My Orders</a>
+<a href="/customer/wishlist/" class="sidebar-link active"><i class="bi bi-heart"></i>Wishlist</a>
+<a href="/customer/support/" class="sidebar-link"><i class="bi bi-headset"></i>Support</a>
+{% endblock %}
+{% block content %}
+{% if items %}
+<div class="row g-3">
+  {% for item in items %}
+  <div class="col-6 col-md-4 col-lg-3">{% include "partials/product_card.html" with product=item.product %}</div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5">
+  <div style="font-size:72px">❤️</div>
+  <h4 class="fw-bold mt-3 mb-1">Your wishlist is empty</h4>
+  <p class="text-muted">Save your favourite products here</p>
+  <a href="{% url 'products:shop' %}" class="btn btn-primary btn-lg mt-2 px-5"><i class="bi bi-bag me-2"></i>Browse Products</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base/dashboard_base.html" %}
+{% block title %}Withdrawals — Admin{% endblock %}
+{% block page_title %}Withdrawal Requests{% endblock %}
+{% block sidebar_nav %}
+<a href="/admin-panel/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
+<a href="/admin-panel/withdrawals/" class="sidebar-link active"><i class="bi bi-wallet2"></i>Withdrawals</a>
+<a href="/admin-panel/vendors/" class="sidebar-link"><i class="bi bi-shop"></i>Vendors</a>
+{% endblock %}
+{% block content %}
+<div class="d-flex gap-2 mb-4">
+  <a href="?status=pending" class="btn btn-sm {% if status == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">Pending</a>
+  <a href="?status=approved" class="btn btn-sm {% if status == 'approved' %}btn-success{% else %}btn-outline-secondary{% endif %}">Approved</a>
+  <a href="?status=rejected" class="btn btn-sm {% if status == 'rejected' %}btn-danger{% else %}btn-outline-secondary{% endif %}">Rejected</a>
+  <a href="?status=all" class="btn btn-sm btn-outline-secondary">All</a>
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light"><tr><th class="ps-3">Vendor</th><th>Amount</th><th>Bank</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for w in page_obj %}
+          <tr>
+            <td class="ps-3"><div class="fw-semibold small">{{ w.vendor.business_name }}</div><div class="text-muted" style="font-size:11px">{{ w.vendor.user.email }}</div></td>
+            <td class="fw-bold text-primary">₦{{ w.amount|floatformat:2 }}</td>
+            <td class="text-muted small">{{ w.vendor.bank_name|default:"-" }}<br>{{ w.vendor.bank_account_number|default:"-" }}</td>
+            <td><span class="badge {% if w.status == 'approved' or w.status == 'paid' %}bg-success{% elif w.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ w.get_status_display }}</span></td>
+            <td class="text-muted small">{{ w.created_at|date:"M d, Y" }}</td>
+            <td>
+              {% if w.status == 'pending' %}
+              <form method="post" action="/admin-panel/withdrawals/{{ w.id }}/process/" class="d-flex gap-1">
+                {% csrf_token %}
+                <button name="action" value="approve" class="btn btn-success btn-sm py-0 fw-bold" onclick="return confirm('Approve this withdrawal?')">Approve</button>
+                <button name="action" value="reject" class="btn btn-danger btn-sm py-0">Reject</button>
+              </form>
+              {% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="6" class="text-center py-4 text-muted">No withdrawal requests</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% if page_obj.has_other_pages %}<div class="card-footer bg-white border-0">{% include "partials/pagination.html" with page_obj=page_obj %}</div>{% endif %}
+</div>
+{% endblock %}
