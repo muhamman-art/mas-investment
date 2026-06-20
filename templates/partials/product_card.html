@@ -2,8 +2,14 @@
 <div class="product-card h-100">
     <a href="{% url 'products:product_detail' product.slug %}" class="product-img-wrap">
         {% with img=product.get_primary_image %}
-            {% if img and img.image %}
-                <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img" loading="lazy">
+            {% if img %}
+                {% with img_url=img.get_image_url %}
+                {% if img_url %}
+                    <img src="{{ img_url }}" alt="{{ product.name }}" class="product-img" loading="lazy">
+                {% else %}
+                    <div class="product-img-placeholder"><i class="bi bi-image fs-1 text-secondary"></i></div>
+                {% endif %}
+                {% endwith %}
             {% else %}
                 <div class="product-img-placeholder"><i class="bi bi-image fs-1 text-secondary"></i></div>
             {% endif %}

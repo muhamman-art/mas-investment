@@ -12,13 +12,9 @@ class Category(models.Model):
     name = models.CharField(max_length=100)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, blank=True, help_text='Bootstrap icon class')
+    icon = models.CharField(max_length=50, blank=True)
     image = models.ImageField(upload_to='categories/', blank=True, null=True)
-    parent = models.ForeignKey(
-        'self', on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='children'
-    )
+    parent = models.ForeignKey('self', on_delete=models.SET_NULL, null=True, blank=True, related_name='children')
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -51,17 +47,8 @@ class Product(models.Model):
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    vendor = models.ForeignKey(
-        'vendors.Vendor',
-        on_delete=models.CASCADE,
-        related_name='products'
-    )
-    category = models.ForeignKey(
-        Category,
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name='products'
-    )
+    vendor = models.ForeignKey('vendors.Vendor', on_delete=models.CASCADE, related_name='products')
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
     name = models.CharField(max_length=300)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField()
@@ -76,13 +63,10 @@ class Product(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_ACTIVE)
     is_featured = models.BooleanField(default=False)
     allow_reviews = models.BooleanField(default=True)
-
-    # Stats
     views = models.PositiveIntegerField(default=0)
     total_sold = models.PositiveIntegerField(default=0)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.00)
     review_count = models.PositiveIntegerField(default=0)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -102,7 +86,6 @@ class Product(models.Model):
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug
-        # Auto set status based on stock
         if self.stock == 0 and self.status == self.STATUS_ACTIVE:
             self.status = self.STATUS_OUT_OF_STOCK
         elif self.stock > 0 and self.status == self.STATUS_OUT_OF_STOCK:
@@ -144,6 +127,17 @@ class ProductImage(models.Model):
     def __str__(self):
         return f"Image for {self.product.name}"
 
+    def get_image_url(self):
+        """Get the correct image URL whether using Cloudinary or local storage."""
+        try:
+            url = self.image.url
+            # If it's a cloudinary URL, return as is
+            if 'cloudinary.com' in url or url.startswith('http'):
+                return url
+            return url
+        except Exception:
+            return None
+
     def save(self, *args, **kwargs):
         if self.is_primary:
             ProductImage.objects.filter(product=self.product).exclude(pk=self.pk).update(is_primary=False)
@@ -152,11 +146,7 @@ class ProductImage(models.Model):
 
 class Wishlist(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='wishlist_items'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='wishlist_items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='wishlisted_by')
     added_at = models.DateTimeField(auto_now_add=True)
 

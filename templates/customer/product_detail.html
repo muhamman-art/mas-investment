@@ -3,7 +3,6 @@
 
 {% block content %}
 <div class="container-fluid px-4 py-4">
-  <!-- Breadcrumb -->
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small">
       <li class="breadcrumb-item"><a href="/">Home</a></li>
@@ -19,8 +18,14 @@
       <div class="product-detail-images">
         {% with primary=product.get_primary_image %}
         <div class="main-image-wrap mb-3">
-          {% if primary and primary.image %}
-            <img src="{{ primary.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-3 w-100" id="mainProductImg" style="max-height:480px;object-fit:contain;background:#f8fafc;cursor:zoom-in" onclick="openImageModal(this.src)">
+          {% if primary %}
+            {% with img_url=primary.get_image_url %}
+            {% if img_url %}
+              <img src="{{ img_url }}" alt="{{ product.name }}" class="img-fluid rounded-3 w-100" id="mainProductImg" style="max-height:480px;object-fit:contain;background:#f8fafc;cursor:zoom-in" onclick="openImageModal(this.src)">
+            {% else %}
+              <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="height:400px"><i class="bi bi-image fs-1 text-secondary"></i></div>
+            {% endif %}
+            {% endwith %}
           {% else %}
             <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="height:400px"><i class="bi bi-image fs-1 text-secondary"></i></div>
           {% endif %}
@@ -29,9 +34,13 @@
         {% if product.images.count > 1 %}
         <div class="d-flex gap-2 overflow-auto">
           {% for img in product.images.all %}
-          <div class="thumb-img flex-shrink-0" onclick="document.getElementById('mainProductImg').src='{{ img.image.url }}'">
-            <img src="{{ img.image.url }}" alt="thumb" class="rounded" style="width:72px;height:72px;object-fit:cover;cursor:pointer;border:2px solid transparent" onmouseover="this.style.borderColor='#4f46e5'" onmouseout="this.style.borderColor='transparent'">
+          {% with img_url=img.get_image_url %}
+          {% if img_url %}
+          <div class="thumb-img flex-shrink-0" onclick="document.getElementById('mainProductImg').src='{{ img_url }}'">
+            <img src="{{ img_url }}" alt="thumb" class="rounded" style="width:72px;height:72px;object-fit:cover;cursor:pointer;border:2px solid transparent" onmouseover="this.style.borderColor='#4f46e5'" onmouseout="this.style.borderColor='transparent'">
           </div>
+          {% endif %}
+          {% endwith %}
           {% endfor %}
         </div>
         {% endif %}
@@ -58,7 +67,6 @@
           <span class="text-muted small"><i class="bi bi-eye me-1"></i>{{ product.views }} views</span>
         </div>
 
-        <!-- Price -->
         <div class="price-block mb-3 p-3 bg-light rounded-3">
           <div class="d-flex align-items-baseline gap-3">
             <span class="fs-2 fw-800 text-primary">₦{{ product.price|floatformat:2 }}</span>
@@ -69,12 +77,10 @@
           </div>
         </div>
 
-        <!-- Short description -->
         {% if product.short_description %}
         <p class="text-muted mb-3">{{ product.short_description }}</p>
         {% endif %}
 
-        <!-- Stock -->
         <div class="mb-3">
           {% if product.is_in_stock %}
             <span class="text-success fw-semibold small"><i class="bi bi-check-circle me-1"></i>In Stock ({{ product.stock }} available)</span>
@@ -84,7 +90,6 @@
           {% endif %}
         </div>
 
-        <!-- Vendor -->
         <div class="vendor-info d-flex align-items-center gap-2 mb-4 p-3 bg-light rounded-3">
           <div class="bg-primary bg-opacity-10 rounded-circle p-2"><i class="bi bi-shop text-primary fs-5"></i></div>
           <div>
@@ -93,7 +98,6 @@
           </div>
         </div>
 
-        <!-- Add to Cart -->
         {% if product.is_in_stock %}
         <form method="post" action="{% url 'products:add_to_cart' product.id %}" class="mb-3">
           {% csrf_token %}
@@ -126,7 +130,6 @@
         <button class="btn btn-secondary btn-lg w-100" disabled>Out of Stock</button>
         {% endif %}
 
-        <!-- Delivery info -->
         <div class="row g-2 mt-3">
           <div class="col-4 text-center"><div class="border rounded p-2 small"><i class="bi bi-truck text-primary d-block mb-1 fs-5"></i>Fast Delivery</div></div>
           <div class="col-4 text-center"><div class="border rounded p-2 small"><i class="bi bi-shield-check text-success d-block mb-1 fs-5"></i>Secure Pay</div></div>
@@ -136,7 +139,7 @@
     </div>
   </div>
 
-  <!-- Tabs: Description + Reviews -->
+  <!-- Tabs -->
   <div class="mt-5">
     <ul class="nav nav-tabs" id="productTabs">
       <li class="nav-item"><button class="nav-link active fw-semibold" data-bs-toggle="tab" data-bs-target="#descTab">Description</button></li>
@@ -154,7 +157,7 @@
             <div>
               <div class="d-flex align-items-center gap-2 mb-1">
                 <span class="fw-semibold">{{ review.user.get_full_name }}</span>
-                {% if review.is_verified_purchase %}<span class="badge bg-success-subtle text-success small">Verified Purchase</span>{% endif %}
+                {% if review.is_verified_purchase %}<span class="badge bg-success-subtle text-success small">Verified</span>{% endif %}
                 <span class="text-muted small ms-auto">{{ review.created_at|date:"M d, Y" }}</span>
               </div>
               <div class="mb-1">{% for i in "12345" %}<i class="bi bi-star{% if forloop.counter <= review.rating %}-fill text-warning{% else %} text-secondary{% endif %} small"></i>{% endfor %}</div>
@@ -164,13 +167,12 @@
           </div>
           {% endfor %}
         {% else %}
-          <div class="text-center py-4 text-muted"><i class="bi bi-chat-square fs-2 d-block mb-2"></i>No reviews yet. Be the first to review!</div>
+          <div class="text-center py-4 text-muted"><i class="bi bi-chat-square fs-2 d-block mb-2"></i>No reviews yet.</div>
         {% endif %}
       </div>
     </div>
   </div>
 
-  <!-- Related Products -->
   {% if related_products %}
   <div class="mt-5">
     <h4 class="fw-bold mb-3">Related Products</h4>
@@ -181,7 +183,6 @@
   {% endif %}
 </div>
 
-<!-- Image zoom modal -->
 <div class="modal fade" id="imgZoomModal" tabindex="-1">
   <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content bg-dark border-0">
