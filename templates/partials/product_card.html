@@ -2,7 +2,7 @@
 <div class="product-card h-100">
     <a href="{% url 'products:product_detail' product.slug %}" class="product-img-wrap">
         {% with img=product.get_primary_image %}
-            {% if img %}
+            {% if img and img.image %}
                 <img src="{{ img.image.url }}" alt="{{ product.name }}" class="product-img" loading="lazy">
             {% else %}
                 <div class="product-img-placeholder"><i class="bi bi-image fs-1 text-secondary"></i></div>
@@ -16,7 +16,6 @@
         {% if not product.is_in_stock %}
             <div class="out-of-stock-overlay"><span>Out of Stock</span></div>
         {% endif %}
-        <!-- Quick actions -->
         <div class="product-actions">
             {% if user.is_authenticated %}
             <button class="action-btn wishlist-btn" onclick="toggleWishlist(event, '{{ product.id }}')" title="Add to Wishlist">

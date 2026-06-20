@@ -19,7 +19,7 @@
       <div class="product-detail-images">
         {% with primary=product.get_primary_image %}
         <div class="main-image-wrap mb-3">
-          {% if primary %}
+          {% if primary and primary.image %}
             <img src="{{ primary.image.url }}" alt="{{ product.name }}" class="img-fluid rounded-3 w-100" id="mainProductImg" style="max-height:480px;object-fit:contain;background:#f8fafc;cursor:zoom-in" onclick="openImageModal(this.src)">
           {% else %}
             <div class="bg-light rounded-3 d-flex align-items-center justify-content-center" style="height:400px"><i class="bi bi-image fs-1 text-secondary"></i></div>
