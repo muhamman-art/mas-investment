@@ -3,6 +3,7 @@ MAS INVESTMENT - Production-Ready E-Commerce Platform
 Django Settings
 """
 import os
+import dj_database_url
 from pathlib import Path
 from datetime import timedelta
 
@@ -73,19 +74,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # ─── DATABASE ────────────────────────────────────────────────────────────────────
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'mas_investment_db'),
-        'USER': os.environ.get('DB_USER', 'mas_user'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'mas_secure_password_2024'),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'OPTIONS': {
-            'connect_timeout': 10,
-        },
+DATABASE_URL = os.environ.get('DATABASE_URL')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'mas_investment_db'),
+            'USER': os.environ.get('DB_USER', 'mas_user'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', 'mas_secure_password_2024'),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 10,
+            },
+        }
+    }
 
 # ─── CUSTOM USER MODEL ───────────────────────────────────────────────────────────
 AUTH_USER_MODEL = 'accounts.User'
@@ -165,10 +173,8 @@ CORS_ALLOW_CREDENTIALS = True
 
 # ─── SECURITY ────────────────────────────────────────────────────────────────────
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SECURE_HSTS_SECONDS = 31536000
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = False  # Railway handles SSL
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_BROWSER_XSS_FILTER = True
