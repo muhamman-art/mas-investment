@@ -15,6 +15,7 @@ from apps.accounts.models import User
 from apps.support.models import SupportTicket, SupportReply
 from apps.notifications.models import Notification
 from apps.riders.models import Rider
+from apps.vendors.models import Vendor
 
 
 def staff_required(view_func):
@@ -87,17 +88,31 @@ def approve_receipt_view(request, receipt_id):
     receipt = get_object_or_404(PaymentReceipt, pk=receipt_id)
     order = receipt.order
 
+    # Update receipt
     receipt.status = PaymentReceipt.STATUS_APPROVED
     receipt.reviewed_by = request.user
     receipt.reviewed_at = timezone.now()
     receipt.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
 
+    # Update order
     order.status = Order.STATUS_PROCESSING
     order.payment_status = Order.PAYMENT_STATUS_VERIFIED
     order.paid_at = timezone.now()
     order.save(update_fields=['status', 'payment_status', 'paid_at'])
 
-    # Notify customer
+    # ── Update vendor wallet & sales for each order item ──────────────────────
+    for item in order.items.all():
+        vendor = item.vendor
+        vendor.wallet_balance += item.vendor_amount
+        vendor.total_sales += item.subtotal
+        vendor.total_orders += 1
+        vendor.save(update_fields=['wallet_balance', 'total_sales', 'total_orders'])
+
+        # Mark item as vendor paid
+        item.vendor_paid = True
+        item.save(update_fields=['vendor_paid'])
+
+    # ── Notify customer ───────────────────────────────────────────────────────
     Notification.send(
         user=order.customer,
         notification_type=Notification.TYPE_PAYMENT_APPROVED,
@@ -108,7 +123,7 @@ def approve_receipt_view(request, receipt_id):
         color='success'
     )
 
-    # Notify vendors
+    # ── Notify vendors ────────────────────────────────────────────────────────
     vendor_ids = order.items.values_list('vendor__user', flat=True).distinct()
     vendor_users = User.objects.filter(pk__in=vendor_ids)
     for vendor_user in vendor_users:
@@ -122,7 +137,7 @@ def approve_receipt_view(request, receipt_id):
             color='primary'
         )
 
-    messages.success(request, f'Payment approved for order #{order.order_number}.')
+    messages.success(request, f'Payment approved for order #{order.order_number}. Vendor wallets updated.')
     return redirect('staff:receipts')
 
 
@@ -206,6 +221,10 @@ def assign_rider_view(request, order_id):
         order.status = Order.STATUS_ASSIGNED
         order.save(update_fields=['status'])
 
+        # Mark rider as unavailable
+        rider.is_available = False
+        rider.save(update_fields=['is_available'])
+
         Notification.send(
             user=rider.user,
             notification_type=Notification.TYPE_DELIVERY_ASSIGNED,
@@ -228,7 +247,11 @@ def assign_rider_view(request, order_id):
         messages.success(request, f'Rider assigned for order #{order.order_number}.')
         return redirect('staff:orders')
 
-    available_riders = Rider.objects.filter(status=Rider.STATUS_ACTIVE, is_available=True).select_related('user')
+    available_riders = Rider.objects.filter(
+        status=Rider.STATUS_ACTIVE,
+        is_available=True
+    ).select_related('user')
+
     return render(request, 'staff/assign_rider.html', {
         'order': order,
         'available_riders': available_riders,
