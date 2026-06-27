@@ -10,7 +10,7 @@ from django.db.models import Count, Sum, Q
 from django.core.paginator import Paginator
 from functools import wraps
 
-from apps.orders.models import Order, PaymentReceipt, DeliveryAssignment
+from apps.orders.models import Order, PaymentReceipt, DeliveryAssignment, OrderItem
 from apps.accounts.models import User
 from apps.support.models import SupportTicket, SupportReply
 from apps.notifications.models import Notification
@@ -88,31 +88,26 @@ def approve_receipt_view(request, receipt_id):
     receipt = get_object_or_404(PaymentReceipt, pk=receipt_id)
     order = receipt.order
 
-    # Update receipt
     receipt.status = PaymentReceipt.STATUS_APPROVED
     receipt.reviewed_by = request.user
     receipt.reviewed_at = timezone.now()
     receipt.save(update_fields=['status', 'reviewed_by', 'reviewed_at'])
 
-    # Update order
     order.status = Order.STATUS_PROCESSING
     order.payment_status = Order.PAYMENT_STATUS_VERIFIED
     order.paid_at = timezone.now()
     order.save(update_fields=['status', 'payment_status', 'paid_at'])
 
-    # ── Update vendor wallet & sales for each order item ──────────────────────
-    for item in order.items.all():
-        vendor = item.vendor
-        vendor.wallet_balance += item.vendor_amount
-        vendor.total_sales += item.subtotal
-        vendor.total_orders += 1
-        vendor.save(update_fields=['wallet_balance', 'total_sales', 'total_orders'])
+    # Credit each vendor's wallet for their share of this order
+    order_items = OrderItem.objects.filter(order=order, vendor_paid=False)
+    vendor_totals = order_items.values('vendor').annotate(total=Sum('vendor_amount'))
+    for row in vendor_totals:
+        vendor = Vendor.objects.get(pk=row['vendor'])
+        vendor.wallet_balance += row['total']
+        vendor.save(update_fields=['wallet_balance'])
+    order_items.update(vendor_paid=True)
 
-        # Mark item as vendor paid
-        item.vendor_paid = True
-        item.save(update_fields=['vendor_paid'])
-
-    # ── Notify customer ───────────────────────────────────────────────────────
+    # Notify customer
     Notification.send(
         user=order.customer,
         notification_type=Notification.TYPE_PAYMENT_APPROVED,
@@ -123,7 +118,7 @@ def approve_receipt_view(request, receipt_id):
         color='success'
     )
 
-    # ── Notify vendors ────────────────────────────────────────────────────────
+    # Notify vendors
     vendor_ids = order.items.values_list('vendor__user', flat=True).distinct()
     vendor_users = User.objects.filter(pk__in=vendor_ids)
     for vendor_user in vendor_users:
@@ -137,7 +132,7 @@ def approve_receipt_view(request, receipt_id):
             color='primary'
         )
 
-    messages.success(request, f'Payment approved for order #{order.order_number}. Vendor wallets updated.')
+    messages.success(request, f'Payment approved for order #{order.order_number}.')
     return redirect('staff:receipts')
 
 
@@ -221,10 +216,6 @@ def assign_rider_view(request, order_id):
         order.status = Order.STATUS_ASSIGNED
         order.save(update_fields=['status'])
 
-        # Mark rider as unavailable
-        rider.is_available = False
-        rider.save(update_fields=['is_available'])
-
         Notification.send(
             user=rider.user,
             notification_type=Notification.TYPE_DELIVERY_ASSIGNED,
@@ -247,11 +238,7 @@ def assign_rider_view(request, order_id):
         messages.success(request, f'Rider assigned for order #{order.order_number}.')
         return redirect('staff:orders')
 
-    available_riders = Rider.objects.filter(
-        status=Rider.STATUS_ACTIVE,
-        is_available=True
-    ).select_related('user')
-
+    available_riders = Rider.objects.filter(status=Rider.STATUS_ACTIVE, is_available=True).select_related('user')
     return render(request, 'staff/assign_rider.html', {
         'order': order,
         'available_riders': available_riders,
