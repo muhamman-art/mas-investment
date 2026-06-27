@@ -32,6 +32,12 @@
             <div class="col-sm-6"><label class="form-label fw-semibold small">City</label><input type="text" name="city" class="form-control" value="{{ user.customer_profile.city }}"></div>
             <div class="col-sm-6"><label class="form-label fw-semibold small">State</label><input type="text" name="state" class="form-control" value="{{ user.customer_profile.state }}"></div>
             {% endif %}
+            {% if user.is_vendor and user.vendor_profile %}
+            <div class="col-12 mt-2"><hr><h6 class="fw-bold mb-2">Bank Details for Withdrawals</h6></div>
+            <div class="col-sm-6"><label class="form-label fw-semibold small">Bank Name</label><input type="text" name="bank_name" class="form-control" value="{{ user.vendor_profile.bank_name }}" placeholder="e.g. GTBank"></div>
+            <div class="col-sm-6"><label class="form-label fw-semibold small">Account Number</label><input type="text" name="bank_account_number" class="form-control" value="{{ user.vendor_profile.bank_account_number }}" placeholder="0123456789"></div>
+            <div class="col-12"><label class="form-label fw-semibold small">Account Name</label><input type="text" name="bank_account_name" class="form-control" value="{{ user.vendor_profile.bank_account_name }}" placeholder="Name on the bank account"></div>
+            {% endif %}
             <div class="col-12"><button type="submit" class="btn btn-primary fw-bold"><i class="bi bi-check2 me-2"></i>Save Changes</button></div>
           </div>
         </form>

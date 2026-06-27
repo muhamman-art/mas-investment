@@ -182,7 +182,7 @@ def logout_view(request):
     name = request.user.first_name
     logout(request)
     messages.success(request, f'Goodbye, {name}! You have been logged out.')
-    return redirect('home:home')
+    return redirect('home')
 
 
 @csrf_protect
@@ -256,6 +256,13 @@ def profile_view(request):
             profile.city = request.POST.get('city', '')
             profile.state = request.POST.get('state', '')
             profile.save()
+
+        if user.is_vendor and hasattr(user, 'vendor_profile'):
+            vendor = user.vendor_profile
+            vendor.bank_name = request.POST.get('bank_name', '').strip()
+            vendor.bank_account_number = request.POST.get('bank_account_number', '').strip()
+            vendor.bank_account_name = request.POST.get('bank_account_name', '').strip()
+            vendor.save(update_fields=['bank_name', 'bank_account_number', 'bank_account_name'])
 
         messages.success(request, 'Profile updated successfully!')
         return redirect('accounts:profile')
