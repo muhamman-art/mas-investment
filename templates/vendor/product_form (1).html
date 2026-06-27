@@ -24,7 +24,7 @@
         </div>
         <div class="mb-3">
           <label class="form-label fw-semibold small">Short Description</label>
-          <input type="text" name="short_description" class="form-control" maxlength="500" placeholder="Brief product summary (shown in listings)" value="{{ product.short_description|default:'' }}">
+          <input type="text" name="short_description" class="form-control" maxlength="500" placeholder="Brief product summary" value="{{ product.short_description|default:'' }}">
         </div>
         <div class="mb-3">
           <label class="form-label fw-semibold small">Full Description <span class="text-danger">*</span></label>
@@ -41,8 +41,8 @@
           </div>
           <div class="col-sm-4">
             <label class="form-label fw-semibold small">Compare Price (₦)</label>
-            <input type="number" name="compare_price" class="form-control" min="0" step="0.01" placeholder="0.00 (optional)" value="{{ product.compare_price|default:'' }}">
-            <div class="form-text">Crossed-out original price</div>
+            <input type="number" name="compare_price" class="form-control" min="0" step="0.01" placeholder="0.00" value="{{ product.compare_price|default:'' }}">
+            <div class="form-text">Original crossed-out price</div>
           </div>
           <div class="col-sm-4">
             <label class="form-label fw-semibold small">Stock Quantity <span class="text-danger">*</span></label>
@@ -62,14 +62,22 @@
       <div class="product-form-section">
         <h6><i class="bi bi-images me-2 text-info"></i>Product Images</h6>
         <p class="text-muted small mb-3">Upload up to 5 images. First image will be the primary image.</p>
-        <input type="file" name="images" class="form-control" accept="image/*" multiple data-preview="imagePreview">
-        <div class="image-preview-grid mt-3" id="imagePreview">
-          {% if product and product.images.all %}
-            {% for img in product.images.all %}
-            <div class="image-preview-item"><img src="{{ img.image.url }}" alt="Product image">{% if img.is_primary %}<span class="position-absolute top-0 start-0 badge bg-primary" style="font-size:9px">Primary</span>{% endif %}</div>
-            {% endfor %}
+        {% if product and product.images.all %}
+        <div class="image-preview-grid mb-3">
+          {% for img in product.images.all %}
+          {% with img_url=img.get_image_url %}
+          {% if img_url %}
+          <div class="image-preview-item">
+            <img src="{{ img_url }}" alt="Product image">
+            {% if img.is_primary %}<span class="position-absolute top-0 start-0 badge bg-primary" style="font-size:9px">Primary</span>{% endif %}
+          </div>
           {% endif %}
+          {% endwith %}
+          {% endfor %}
         </div>
+        {% endif %}
+        <input type="file" name="images" class="form-control" accept="image/*" multiple>
+        <div class="form-text">JPG, PNG, WEBP accepted. Max 10MB per image.</div>
       </div>
     </div>
 
@@ -80,7 +88,7 @@
         <div class="mb-3">
           <label class="form-label fw-semibold small">Status</label>
           <select name="status" class="form-select">
-            <option value="active" {% if product.status == 'active' or not product %}selected{% endif %}>Active (Visible)</option>
+            <option value="active" {% if not product or product.status == 'active' %}selected{% endif %}>Active (Visible)</option>
             <option value="draft" {% if product.status == 'draft' %}selected{% endif %}>Draft (Hidden)</option>
             <option value="inactive" {% if product.status == 'inactive' %}selected{% endif %}>Inactive</option>
           </select>

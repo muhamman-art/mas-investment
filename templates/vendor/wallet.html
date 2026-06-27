@@ -1,73 +1,95 @@
 {% extends "base/dashboard_base.html" %}
 {% block title %}Wallet — Vendor{% endblock %}
 {% block page_title %}Wallet & Withdrawals{% endblock %}
+
 {% block sidebar_nav %}
 <a href="/vendor/" class="sidebar-link"><i class="bi bi-speedometer2"></i>Dashboard</a>
 <a href="/vendor/products/" class="sidebar-link"><i class="bi bi-box-seam"></i>Products</a>
 <a href="/vendor/orders/" class="sidebar-link"><i class="bi bi-bag"></i>Orders</a>
 <a href="/vendor/wallet/" class="sidebar-link active"><i class="bi bi-wallet2"></i>Wallet</a>
+<a href="/vendor/reports/" class="sidebar-link"><i class="bi bi-bar-chart-line"></i>Reports</a>
 {% endblock %}
+
 {% block content %}
 <div class="row g-4 mb-4">
   <div class="col-md-5">
     <div class="card border-0 h-100" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff">
       <div class="card-body p-4">
         <div class="small text-white-50 mb-1">Available Balance</div>
-        <div class="fs-1 fw-800 mb-3">₦{{ vendor.wallet_balance|floatformat:2 }}</div>
-        <div class="small text-white-75">Total Sales: ₦{{ vendor.total_sales|floatformat:2 }}</div>
+        <div class="fs-1 fw-800 mb-1">₦{{ vendor.wallet_balance|floatformat:2 }}</div>
+        <div class="small text-white-75 mb-3">Total Sales: ₦{{ vendor.total_sales|floatformat:2 }}</div>
+        <div class="small text-white-50">Commission Rate: {{ vendor.commission_rate }}%</div>
       </div>
     </div>
   </div>
+
   <div class="col-md-7">
     <div class="card border-0 shadow-sm h-100">
       <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Request Withdrawal</h6></div>
       <div class="card-body">
         {% if vendor.bank_account_number %}
         <div class="bg-light rounded p-3 mb-3 small">
-          <div class="fw-semibold mb-1">Bank Details on File</div>
-          <div class="text-muted">{{ vendor.bank_name }} · {{ vendor.bank_account_number }} · {{ vendor.bank_account_name }}</div>
+          <div class="fw-semibold mb-1"><i class="bi bi-bank me-1 text-primary"></i>Bank Details on File</div>
+          <div class="text-muted">{{ vendor.bank_name }} · {{ vendor.bank_account_number }}</div>
+          <div class="text-muted">{{ vendor.bank_account_name }}</div>
         </div>
         {% else %}
-        <div class="alert alert-warning small"><i class="bi bi-exclamation-triangle me-1"></i>Please add bank details in your profile before requesting withdrawal.</div>
+        <div class="alert alert-warning small">
+          <i class="bi bi-exclamation-triangle me-1"></i>
+          Please add your bank details in your profile before requesting withdrawal.
+        </div>
         {% endif %}
-        <form method="post">
+
+        <form method="post" action="/vendor/wallet/">
           {% csrf_token %}
-          <div class="row g-2">
-            <div class="col-sm-7">
-              <label class="form-label fw-semibold small">Amount (₦)</label>
-              <input type="number" name="amount" class="form-control" min="1000" max="{{ vendor.wallet_balance }}" step="0.01" placeholder="Min ₦1,000" required>
-            </div>
-            <div class="col-sm-5 d-flex align-items-end">
-              <button type="submit" class="btn btn-success fw-bold w-100" {% if not vendor.bank_account_number %}disabled{% endif %}>
-                <i class="bi bi-cash-stack me-1"></i>Request
-              </button>
-            </div>
-            <div class="col-12">
-              <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Notes (optional)"></textarea>
-            </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Amount to Withdraw (₦)</label>
+            <input type="number" name="amount" class="form-control" min="1000" max="{{ vendor.wallet_balance }}" step="0.01" placeholder="Minimum ₦1,000" required>
+            <div class="form-text">Available: ₦{{ vendor.wallet_balance|floatformat:2 }}</div>
           </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold small">Notes (optional)</label>
+            <textarea name="notes" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-success fw-bold w-100" {% if not vendor.bank_account_number %}disabled{% endif %}>
+            <i class="bi bi-cash-stack me-2"></i>Request Withdrawal
+          </button>
         </form>
       </div>
     </div>
   </div>
 </div>
 
+<!-- Withdrawal History -->
 <div class="card border-0 shadow-sm">
   <div class="card-header bg-white border-0 pt-3"><h6 class="fw-bold mb-0">Withdrawal History</h6></div>
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-hover align-middle mb-0 small">
-        <thead class="table-light"><tr><th class="ps-3">Date</th><th>Amount</th><th>Status</th><th>Notes</th></tr></thead>
+        <thead class="table-light">
+          <tr>
+            <th class="ps-3">Date</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Notes</th>
+            <th>Processed</th>
+          </tr>
+        </thead>
         <tbody>
           {% for w in withdrawals %}
           <tr>
             <td class="ps-3 text-muted">{{ w.created_at|date:"M d, Y" }}</td>
             <td class="fw-bold">₦{{ w.amount|floatformat:2 }}</td>
-            <td><span class="badge {% if w.status == 'paid' or w.status == 'approved' %}bg-success{% elif w.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ w.get_status_display }}</span></td>
-            <td class="text-muted">{{ w.admin_notes|default:w.notes|truncatechars:40 }}</td>
+            <td>
+              <span class="badge {% if w.status == 'paid' or w.status == 'approved' %}bg-success{% elif w.status == 'pending' %}bg-warning text-dark{% else %}bg-danger{% endif %}">
+                {{ w.get_status_display }}
+              </span>
+            </td>
+            <td class="text-muted">{{ w.admin_notes|default:w.notes|default:"-"|truncatechars:40 }}</td>
+            <td class="text-muted">{{ w.processed_at|date:"M d, Y"|default:"-" }}</td>
           </tr>
           {% empty %}
-          <tr><td colspan="4" class="text-center py-4 text-muted">No withdrawal requests yet</td></tr>
+          <tr><td colspan="5" class="text-center py-4 text-muted">No withdrawal requests yet</td></tr>
           {% endfor %}
         </tbody>
       </table>
